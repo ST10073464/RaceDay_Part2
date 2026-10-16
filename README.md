@@ -137,7 +137,7 @@ Organiser privileges should be assigned through a trusted
 administrative process rather than allowing users to grant
 themselves the Organiser role.
 
-Protected API endpoints use role-based authorization and ownership
+Protected API endpoints use role-based authorisation and ownership
 checks.
 
 Passwords are stored using ASP.NET Core password hashing rather
@@ -152,10 +152,7 @@ test workflow successfully.
 
 ## Video Demonstration
 
-An unlisted YouTube demonstration link will be added here before
-final submission.
-
-TODO: Add final unlisted YouTube URL.
+https://youtu.be/DIlPPcNDX2s
 
 ## Author
 
