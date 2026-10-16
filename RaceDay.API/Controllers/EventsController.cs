@@ -86,11 +86,6 @@ public class EventsController : ControllerBase
 
     }
 
-
-
-
-
-
     // PUT: api/events/{id}
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Organiser")]
@@ -157,6 +152,54 @@ public class EventsController : ControllerBase
     }
 
 
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Organiser")]
+    public async Task<IActionResult> DeleteEvent(int id)
+    {
+        var userIdClaim = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var existingEvent = await _context.Events
+            .FirstOrDefaultAsync(e => e.EventId == id);
+
+        if (existingEvent == null)
+        {
+            return NotFound();
+        }
+
+        if (existingEvent.OrganiserId != userId)
+        {
+            return Forbid();
+        }
+
+        var hasEnrolments = await _context.Enrolments
+            .AnyAsync(e => e.EventId == id);
+
+        if (hasEnrolments)
+        {
+            return Conflict(new
+            {
+                message = "This event cannot be deleted because it has enrolments."
+            });
+        }
+
+        var categories = await _context.Categories
+            .Where(c => c.EventId == id)
+            .ToListAsync();
+
+        _context.Categories.RemoveRange(categories);
+        _context.Events.Remove(existingEvent);
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
 
     // POST: api/events
     [HttpPost]
@@ -213,7 +256,4 @@ public class EventsController : ControllerBase
                 newEvent.OrganiserId
             });
     }
-
-
-
 }
