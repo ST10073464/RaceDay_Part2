@@ -1,4 +1,6 @@
-﻿
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using RaceDay.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
@@ -39,4 +41,62 @@ public class EventsController : ControllerBase
 
         return Ok(events);
     }
+
+
+    // POST: api/events
+    [HttpPost]
+    [Authorize(Roles = "Organiser")]
+    public async Task<IActionResult> CreateEvent(
+        [FromBody] Event newEvent)
+    {
+        var userIdValue = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(newEvent.EventName) ||
+            string.IsNullOrWhiteSpace(newEvent.Location) ||
+            newEvent.DistanceKm <= 0 ||
+            newEvent.EventDate == default)
+        {
+            return BadRequest(new
+            {
+                message = "Event name, location, a valid date, and a positive distance are required."
+            });
+        }
+
+        if (newEvent.EventType != "Run" &&
+            newEvent.EventType != "Walk" &&
+            newEvent.EventType != "Cycle")
+        {
+            return BadRequest(new
+            {
+                message = "Event type must be Run, Walk, or Cycle."
+            });
+        }
+
+        newEvent.OrganiserId = userId;
+        newEvent.CreatedAt = DateTime.UtcNow;
+
+        _context.Events.Add(newEvent);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(
+            nameof(GetEvents),
+            new { id = newEvent.EventId },
+            new
+            {
+                newEvent.EventId,
+                newEvent.EventName,
+                newEvent.EventDate,
+                newEvent.Location,
+                newEvent.DistanceKm,
+                newEvent.EventType,
+                newEvent.OrganiserId
+            });
+    }
+
 }
