@@ -86,6 +86,73 @@ public class EventsController : ControllerBase
     }
 
 
+    // PUT: api/events/{id}
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Organiser")]
+    public async Task<IActionResult> UpdateEvent(
+        int id,
+        [FromBody] Event updatedEvent)
+    {
+        var userIdValue = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var existingEvent = await _context.Events
+            .FirstOrDefaultAsync(e => e.EventId == id);
+
+        if (existingEvent == null)
+        {
+            return NotFound(new
+            {
+                message = "Event not found."
+            });
+        }
+
+        if (existingEvent.OrganiserId != userId)
+        {
+            return Forbid();
+        }
+
+        if (string.IsNullOrWhiteSpace(updatedEvent.EventName) ||
+            string.IsNullOrWhiteSpace(updatedEvent.Location) ||
+            updatedEvent.DistanceKm <= 0 ||
+            updatedEvent.EventDate == default)
+        {
+            return BadRequest(new
+            {
+                message = "Event name, location, a valid date, and a positive distance are required."
+            });
+        }
+
+        if (updatedEvent.EventType != "Run" &&
+            updatedEvent.EventType != "Walk" &&
+            updatedEvent.EventType != "Cycle")
+        {
+            return BadRequest(new
+            {
+                message = "Event type must be Run, Walk, or Cycle."
+            });
+        }
+
+        existingEvent.EventName = updatedEvent.EventName.Trim();
+        existingEvent.Description = updatedEvent.Description;
+        existingEvent.EventDate = updatedEvent.EventDate;
+        existingEvent.Location = updatedEvent.Location.Trim();
+        existingEvent.DistanceKm = updatedEvent.DistanceKm;
+        existingEvent.EventType = updatedEvent.EventType;
+        existingEvent.BannerImageUrl = updatedEvent.BannerImageUrl;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+
+
 
     // POST: api/events
     [HttpPost]
