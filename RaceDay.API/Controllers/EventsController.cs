@@ -42,7 +42,6 @@ public class EventsController : ControllerBase
         return Ok(events);
     }
 
-
     // GET: api/events/{id}
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetEventById(int id)
@@ -83,7 +82,13 @@ public class EventsController : ControllerBase
         }
 
         return Ok(eventDetails);
+
+
     }
+
+
+
+
 
 
     // PUT: api/events/{id}
@@ -153,7 +158,6 @@ public class EventsController : ControllerBase
 
 
 
-
     // POST: api/events
     [HttpPost]
     [Authorize(Roles = "Organiser")]
@@ -209,5 +213,7 @@ public class EventsController : ControllerBase
                 newEvent.OrganiserId
             });
     }
+
+
 
 }
