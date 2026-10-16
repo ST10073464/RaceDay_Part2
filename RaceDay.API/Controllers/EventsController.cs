@@ -43,6 +43,50 @@ public class EventsController : ControllerBase
     }
 
 
+    // GET: api/events/{id}
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetEventById(int id)
+    {
+        var eventDetails = await _context.Events
+            .AsNoTracking()
+            .Where(e => e.EventId == id)
+            .Select(e => new
+            {
+                e.EventId,
+                e.EventName,
+                e.Description,
+                e.EventDate,
+                e.Location,
+                e.DistanceKm,
+                e.EventType,
+                e.BannerImageUrl,
+                e.OrganiserId,
+                Categories = e.Categories
+                    .Select(c => new
+                    {
+                        c.CategoryId,
+                        c.CategoryName,
+                        c.MinAge,
+                        c.MaxAge,
+                        c.DistanceKm
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        if (eventDetails == null)
+        {
+            return NotFound(new
+            {
+                message = "Event not found."
+            });
+        }
+
+        return Ok(eventDetails);
+    }
+
+
+
     // POST: api/events
     [HttpPost]
     [Authorize(Roles = "Organiser")]
