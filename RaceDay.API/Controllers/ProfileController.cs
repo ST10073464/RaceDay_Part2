@@ -53,4 +53,47 @@ public class ProfileController : ControllerBase
 
         return Ok(user);
     }
+
+    // PUT: api/profile
+    [HttpPut]
+    public async Task<IActionResult> UpdateProfile(
+        [FromBody] UpdateProfileRequest request)
+    {
+        var userIdValue = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.UserId == userId);
+
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FirstName) ||
+            string.IsNullOrWhiteSpace(request.LastName))
+        {
+            return BadRequest(new
+            {
+                message = "First name and last name are required."
+            });
+        }
+
+        user.FirstName = request.FirstName.Trim();
+        user.LastName = request.LastName.Trim();
+        user.PhoneNumber = request.PhoneNumber;
+        user.DateOfBirth = request.DateOfBirth;
+        user.ProfilePictureUrl = request.ProfilePictureUrl;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
 }
+
