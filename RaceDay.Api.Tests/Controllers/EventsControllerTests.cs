@@ -39,7 +39,7 @@ namespace RaceDay.Api.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetEventById_ReturnsNotFound_WhenEventDoesNotExist()
+        public async Task GetEventById_Returns404_WhenEventDoesNotExist()
         {
             // Arrange
             using var context = TestDbContextFactory.Create();
@@ -50,7 +50,14 @@ namespace RaceDay.Api.Tests.Controllers
             var result = await controller.GetEventById(999999);
 
             // Assert
-            Assert.IsType<NotFoundResult>(result);
+            var statusCode = result switch
+            {
+                ObjectResult objectResult => objectResult.StatusCode,
+                StatusCodeResult statusCodeResult => statusCodeResult.StatusCode,
+                _ => null
+            };
+
+            Assert.Equal(404, statusCode);
         }
     }
 }
