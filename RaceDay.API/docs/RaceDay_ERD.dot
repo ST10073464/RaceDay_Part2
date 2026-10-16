@@ -1,0 +1,88 @@
+digraph RaceDayERD {
+    graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.6, ranksep=0.9];
+    node [shape=plain, fontname="Arial"];
+    edge [fontname="Arial", fontsize=10];
+
+    Roles [label=<
+      <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+        <TR><TD BGCOLOR="#1f4e78"><FONT COLOR="white"><B>Roles</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>PK RoleId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">RoleName : NVARCHAR(30) UNIQUE</TD></TR>
+      </TABLE>
+    >];
+
+    Users [label=<
+      <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+        <TR><TD BGCOLOR="#1f4e78"><FONT COLOR="white"><B>Users</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>PK UserId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>FK RoleId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">FirstName : NVARCHAR(80)</TD></TR>
+        <TR><TD ALIGN="LEFT">LastName : NVARCHAR(80)</TD></TR>
+        <TR><TD ALIGN="LEFT">Email : NVARCHAR(255) UNIQUE</TD></TR>
+        <TR><TD ALIGN="LEFT">PasswordHash : NVARCHAR(500)</TD></TR>
+        <TR><TD ALIGN="LEFT">PhoneNumber : NVARCHAR(30)</TD></TR>
+        <TR><TD ALIGN="LEFT">DateOfBirth : DATE</TD></TR>
+        <TR><TD ALIGN="LEFT">ProfilePictureUrl : NVARCHAR(1000)</TD></TR>
+        <TR><TD ALIGN="LEFT">CreatedAt : DATETIME2</TD></TR>
+      </TABLE>
+    >];
+
+    Events [label=<
+      <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+        <TR><TD BGCOLOR="#1f4e78"><FONT COLOR="white"><B>Events</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>PK EventId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>FK OrganiserId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">EventName : NVARCHAR(150)</TD></TR>
+        <TR><TD ALIGN="LEFT">Description : NVARCHAR(1000)</TD></TR>
+        <TR><TD ALIGN="LEFT">EventDate : DATE</TD></TR>
+        <TR><TD ALIGN="LEFT">Location : NVARCHAR(200)</TD></TR>
+        <TR><TD ALIGN="LEFT">DistanceKm : DECIMAL(6,2)</TD></TR>
+        <TR><TD ALIGN="LEFT">EventType : NVARCHAR(20)</TD></TR>
+        <TR><TD ALIGN="LEFT">BannerImageUrl : NVARCHAR(1000)</TD></TR>
+        <TR><TD ALIGN="LEFT">CreatedAt : DATETIME2</TD></TR>
+      </TABLE>
+    >];
+
+    Categories [label=<
+      <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+        <TR><TD BGCOLOR="#1f4e78"><FONT COLOR="white"><B>Categories</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>PK CategoryId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>FK EventId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">CategoryName : NVARCHAR(100)</TD></TR>
+        <TR><TD ALIGN="LEFT">MinAge : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">MaxAge : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">DistanceKm : DECIMAL(6,2)</TD></TR>
+      </TABLE>
+    >];
+
+    Enrolments [label=<
+      <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+        <TR><TD BGCOLOR="#1f4e78"><FONT COLOR="white"><B>Enrolments</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>PK EnrolmentId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>FK ParticipantId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>FK EventId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>FK CategoryId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">EnrolmentDate : DATETIME2</TD></TR>
+        <TR><TD ALIGN="LEFT">EnrolmentStatus : NVARCHAR(20)</TD></TR>
+      </TABLE>
+    >];
+
+    Results [label=<
+      <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+        <TR><TD BGCOLOR="#1f4e78"><FONT COLOR="white"><B>Results</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>PK ResultId</B> : INT</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>FK EnrolmentId</B> : INT UNIQUE</TD></TR>
+        <TR><TD ALIGN="LEFT">FinishTime : TIME</TD></TR>
+        <TR><TD ALIGN="LEFT">FinishingPosition : INT</TD></TR>
+        <TR><TD ALIGN="LEFT">PublishedAt : DATETIME2</TD></TR>
+      </TABLE>
+    >];
+
+    Roles -> Users [label="1 : M\nrole assigned to users"];
+    Users -> Events [label="1 : M\norganiser creates events"];
+    Events -> Categories [label="1 : M\nevent has categories"];
+    Users -> Enrolments [label="1 : M\nparticipant enrols"];
+    Events -> Enrolments [label="1 : M\nevent receives enrolments"];
+    Categories -> Enrolments [label="1 : M\ncategory selected"];
+    Enrolments -> Results [label="1 : 0..1\nresult after event"];
+}
