@@ -2,4 +2,5 @@
   <Project Path="RaceDay.Api.Tests/RaceDay.Api.Tests.csproj" />
   <Project Path="RaceDay.API/RaceDay.API.csproj" />
   <Project Path="RaceDay.Contracts/RaceDay.Contracts.csproj" />
+  <Project Path="RaceDay.Mvc/RaceDay.Mvc.csproj" Id="40efdd8f-7f3f-48f5-9856-45c1c63cc613" />
 </Solution>
