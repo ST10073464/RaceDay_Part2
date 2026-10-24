@@ -1,0 +1,134 @@
+﻿@model List<RaceDay.Mvc.Models.EnrolmentViewModel>
+
+@{
+    ViewData["Title"] = "My Enrolments";
+}
+
+<div class="container mt-4">
+
+    <div class="mb-4">
+        <a asp-controller="Home"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-1">My Enrolments</h2>
+            <p class="text-muted mb-0">
+                View the RaceDay events you have enrolled in.
+            </p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+            @TempData["SuccessMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (ViewBag.EnrolmentError != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.EnrolmentError
+        </div>
+    }
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+
+            @foreach (var enrolment in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+
+                    <div class="card h-100 shadow-sm">
+
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                @enrolment.EventName
+                            </h5>
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="mb-2">
+                                <strong>Category:</strong><br />
+                                @enrolment.CategoryName
+                            </p>
+
+                            <p class="mb-2">
+                                <strong>Enrolment Date:</strong><br />
+                                @enrolment.EnrolmentDate.ToString("dd MMMM yyyy")
+                            </p>
+
+                            <p class="mb-3">
+                                <strong>Status:</strong><br />
+
+                                @if (string.Equals(
+                                    enrolment.EnrolmentStatus,
+                                    "Confirmed",
+                                    StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="badge bg-success">
+                                        @enrolment.EnrolmentStatus
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        @enrolment.EnrolmentStatus
+                                    </span>
+                                }
+                            </p>
+
+                            <a asp-controller="Home"
+                               asp-action="EventDetails"
+                               asp-route-id="@enrolment.EventId"
+                               class="btn btn-outline-primary w-100">
+                                View Event
+                            </a>
+
+                        </div>
+
+                        <div class="card-footer text-muted">
+                            Enrolment ID: @enrolment.EnrolmentId
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+
+            <h5>No enrolments yet</h5>
+
+            <p class="mb-3">
+                You have not enrolled in any RaceDay events yet.
+            </p>
+
+            <a asp-controller="Home"
+               asp-action="Index"
+               class="btn btn-primary">
+                Browse Available Events
+            </a>
+
+        </div>
+    }
+
+</div>

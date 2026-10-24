@@ -1,0 +1,163 @@
+﻿@model RaceDay.Mvc.Models.EventDetailsViewModel
+
+@{
+    ViewData["Title"] = "Event Details";
+}
+
+<div class="container mt-4">
+
+    <div class="mb-4">
+        <a asp-controller="Home"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+
+        <div class="card-header">
+            <h2 class="mb-0">@Model.Event.EventName</h2>
+        </div>
+
+        <div class="card-body">
+
+            <div class="mb-4">
+                <span class="badge bg-primary">
+                    @Model.Event.EventType
+                </span>
+            </div>
+
+            <h5>Description</h5>
+
+            <p>
+                @Model.Event.Description
+            </p>
+
+            <hr />
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <strong>Date</strong>
+                    <p>@Model.Event.EventDate.ToString("dd MMMM yyyy")</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <strong>Location</strong>
+                    <p>@Model.Event.Location</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <strong>Distance</strong>
+                    <p>@Model.Event.DistanceKm.ToString("0.00") km</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <strong>Event ID</strong>
+                    <p>@Model.Event.EventId</p>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <h4 class="mb-3">Available Categories</h4>
+
+            @if (Model.Categories != null && Model.Categories.Any())
+            {
+                <div class="row">
+
+                    @foreach (var category in Model.Categories)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-3">
+
+                            <div class="card h-100">
+
+                                <div class="card-body">
+
+                                    <h5 class="card-title">
+                                        @category.CategoryName
+                                    </h5>
+
+                                    <p class="mb-2">
+                                        <strong>Distance:</strong>
+                                        @category.DistanceKm km
+                                    </p>
+
+                                    <p class="mb-2">
+                                        <strong>Minimum Age:</strong>
+                                        @category.MinAge
+                                    </p>
+
+                                    <p class="mb-3">
+                                        <strong>Maximum Age:</strong>
+                                        @category.MaxAge
+                                    </p>
+
+                                    @if (Model.ExistingEnrolment != null)
+                                    {
+                                        if (Model.ExistingEnrolment.CategoryId == category.CategoryId)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-success w-100"
+                                                    disabled>
+                                                ✓ Enrolled
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-secondary w-100"
+                                                    disabled>
+                                                Already Enrolled in this Event
+                                            </button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <form asp-controller="Home"
+                                              asp-action="Enrol"
+                                              method="post">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="EventId"
+                                                   value="@Model.Event.EventId" />
+
+                                            <input type="hidden"
+                                                   name="CategoryId"
+                                                   value="@category.CategoryId" />
+
+                                            <button type="submit"
+                                                    class="btn btn-primary w-100">
+                                                Enrol
+                                            </button>
+
+                                        </form>
+                                    }
+
+                                    
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No categories are currently available for this event.
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>

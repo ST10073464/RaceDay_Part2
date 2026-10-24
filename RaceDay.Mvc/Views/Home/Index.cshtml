@@ -1,8 +1,243 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model List<RaceDay.Mvc.Models.EventViewModel>
+
+@{
+    ViewData["Title"] = "RaceDay";
+
+    var role = Context.Session.GetString("Role");
+    var email = Context.Session.GetString("Email");
+    var isParticipant =
+        string.Equals(role, "Participant", StringComparison.OrdinalIgnoreCase);
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (!isParticipant)
+{
+    <div class="text-center py-5">
+        <h1 class="display-4">Welcome to RaceDay</h1>
+
+        <p class="lead mt-3">
+            Discover events, register for races and manage your RaceDay journey.
+        </p>
+
+        <div class="mt-4">
+            <a asp-controller="Account"
+               asp-action="Login"
+               class="btn btn-primary me-2">
+                Login
+            </a>
+
+            <a asp-controller="Account"
+               asp-action="Register"
+               class="btn btn-outline-primary">
+                Create Account
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="py-4">
+
+        <!-- PARTICIPANT DASHBOARD HEADER -->
+
+        <div class="mb-4">
+            <h1 class="fw-bold">Participant Dashboard</h1>
+
+            <p class="text-muted mb-0">
+                Welcome, @email
+            </p>
+
+            <p class="text-muted">
+                Browse the available RaceDay events below.
+            </p>
+        </div>
+
+
+        <!-- API ERROR MESSAGE -->
+
+        @if (ViewBag.EventError != null)
+        {
+            <div class="alert alert-danger">
+                @ViewBag.EventError
+            </div>
+        }
+
+
+        <!-- DASHBOARD SUMMARY -->
+
+        <div class="row mb-4">
+
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h6 class="text-muted">
+                            Available Events
+                        </h6>
+
+                        <h2 class="fw-bold">
+                            @Model.Count
+                        </h2>
+
+                        <p class="mb-0">
+                            Events currently available.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h6 class="text-muted">
+                            Account Role
+                        </h6>
+
+                        <h4 class="fw-bold">
+                            Participant
+                        </h4>
+
+                        <p class="mb-0">
+                            Participant access enabled.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h6 class="text-muted">
+                            RaceDay Account
+                        </h6>
+
+                        <h4 class="fw-bold">
+                            Active
+                        </h4>
+
+                        <p class="mb-0">
+                            @email
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- AVAILABLE EVENTS -->
+
+        <div class="d-flex justify-content-between
+                    align-items-center mb-3">
+
+            <div>
+                <h2 class="fw-bold mb-1">
+                    Available Events
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Select an event to view its information.
+                </p>
+            </div>
+
+        </div>
+
+
+        @if (Model == null || Model.Count == 0)
+        {
+            <div class="alert alert-info mt-3">
+                No RaceDay events are currently available.
+            </div>
+        }
+        else
+        {
+            <div class="row">
+
+                @foreach (var raceEvent in Model)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4">
+
+                        <div class="card shadow-sm h-100">
+
+                            @if (!string.IsNullOrWhiteSpace(
+                                    raceEvent.BannerImageUrl))
+                            {
+                                <img src="@raceEvent.BannerImageUrl"
+                                     class="card-img-top"
+                                     alt="@raceEvent.EventName"
+                                     style="height: 200px;
+                                            object-fit: cover;" />
+                            }
+
+                            <div class="card-body d-flex
+                                        flex-column">
+
+                                <div class="mb-2">
+
+                                    <span class="badge bg-primary">
+                                        @raceEvent.EventType
+                                    </span>
+
+                                </div>
+
+                                <h4 class="card-title fw-bold">
+                                    @raceEvent.EventName
+                                </h4>
+
+                                @if (!string.IsNullOrWhiteSpace(
+                                        raceEvent.Description))
+                                {
+                                    <p class="card-text text-muted">
+                                        @raceEvent.Description
+                                    </p>
+                                }
+
+                                <div class="mt-2">
+
+                                    <p class="mb-2">
+                                        <strong>Date:</strong>
+                                        @raceEvent.EventDate.ToString(
+                                            "dd MMMM yyyy")
+                                    </p>
+
+                                    <p class="mb-2">
+                                        <strong>Location:</strong>
+                                        @raceEvent.Location
+                                    </p>
+
+                                    <p class="mb-2">
+                                        <strong>Distance:</strong>
+                                        @raceEvent.DistanceKm km
+                                    </p>
+
+                                </div>
+
+                                <div class="mt-auto pt-3">
+
+                                    <a asp-controller="Home"
+                                       asp-action="EventDetails"
+                                       asp-route-id="@raceEvent.EventId"
+                                       class="btn btn-primary w-100">
+                                        View Event
+                                    </a>
+
+                                </div>
+
+                            </div>
+
+                            <div class="card-footer
+                                        bg-white text-muted">
+
+                                Event ID:
+                                @raceEvent.EventId
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+}

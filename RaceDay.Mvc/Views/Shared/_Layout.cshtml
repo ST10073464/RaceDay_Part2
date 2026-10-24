@@ -73,6 +73,21 @@
                             </a>
                         </li>
 
+                        @if (isLoggedIn &&
+                         string.Equals(
+                             userRole,
+                             "Participant",
+                             StringComparison.OrdinalIgnoreCase))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Home"
+                                   asp-action="MyEnrolments">
+                                    My Enrolments
+                                </a>
+                            </li>
+                        }
+                        
                         @if (!isLoggedIn)
                         {
                             <li class="nav-item">

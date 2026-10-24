@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using RaceDay.Mvc.Models;
 
 namespace RaceDay.Mvc.Services;
 
@@ -21,6 +22,10 @@ public class RaceDayApiClient
         _client = client;
         _httpContextAccessor = httpContextAccessor;
     }
+
+    // ---------------------------------------------------------
+    // SEND REQUEST TO RACEDAY API
+    // ---------------------------------------------------------
 
     public async Task<HttpResponseMessage> SendAsync(
         HttpMethod method,
@@ -44,7 +49,9 @@ public class RaceDayApiClient
         if (body != null)
         {
             string json =
-                JsonSerializer.Serialize(body);
+                JsonSerializer.Serialize(
+                    body,
+                    _jsonOptions);
 
             request.Content =
                 new StringContent(
@@ -55,6 +62,10 @@ public class RaceDayApiClient
 
         return await _client.SendAsync(request);
     }
+
+    // ---------------------------------------------------------
+    // READ JSON RESPONSE
+    // ---------------------------------------------------------
 
     public async Task<T?> ReadAsync<T>(
         HttpResponseMessage response)
@@ -67,8 +78,107 @@ public class RaceDayApiClient
         string json =
             await response.Content.ReadAsStringAsync();
 
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return default;
+        }
+
         return JsonSerializer.Deserialize<T>(
             json,
             _jsonOptions);
     }
+
+    // ---------------------------------------------------------
+    // GET ALL EVENTS
+    // ---------------------------------------------------------
+
+    public async Task<List<EventViewModel>> GetEventsAsync()
+    {
+        using HttpResponseMessage response =
+            await SendAsync(
+                HttpMethod.Get,
+                "api/events");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return new List<EventViewModel>();
+        }
+
+        List<EventViewModel>? events =
+            await ReadAsync<List<EventViewModel>>(
+                response);
+
+        return events ??
+               new List<EventViewModel>();
+    }
+
+    // ---------------------------------------------------------
+    // GET SINGLE EVENT
+    // ---------------------------------------------------------
+
+    public async Task<EventViewModel?> GetEventAsync(
+        int eventId)
+    {
+        using HttpResponseMessage response =
+            await SendAsync(
+                HttpMethod.Get,
+                $"api/events/{eventId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        return await ReadAsync<EventViewModel>(
+            response);
+    }
+
+    // ---------------------------------------------------------
+    // GET EVENT CATEGORIES
+    // ---------------------------------------------------------
+
+    public async Task<List<CategoryViewModel>> GetEventCategoriesAsync(
+        int eventId)
+    {
+        using HttpResponseMessage response =
+            await SendAsync(
+                HttpMethod.Get,
+                $"api/categories/event/{eventId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return new List<CategoryViewModel>();
+        }
+
+        List<CategoryViewModel>? categories =
+            await ReadAsync<List<CategoryViewModel>>(
+                response);
+
+        return categories ??
+               new List<CategoryViewModel>();
+    }
+
+    // ------------------------------------------------------------
+    // GET MY ENROLMENTS
+    // ------------------------------------------------------------
+
+    public async Task<List<EnrolmentViewModel>> GetMyEnrolmentsAsync()
+    {
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "api/enrolments/mine");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Unable to retrieve enrolments. " +
+                $"API returned {(int)response.StatusCode} {response.StatusCode}.");
+        }
+
+        var enrolments =
+            await ReadAsync<List<EnrolmentViewModel>>(response);
+
+        return enrolments ?? new List<EnrolmentViewModel>();
+    }
+
 }
