@@ -41,6 +41,20 @@ namespace RaceDay.Mvc.Controllers
             }
         }
 
+        public IActionResult SessionTest()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            var email = HttpContext.Session.GetString("Email");
+            var role = HttpContext.Session.GetString("Role");
+            var apiCookie = HttpContext.Session.GetString("ApiCookie");
+
+            return Content(
+                $"UserId: {userId ?? "NOT FOUND"}\n" +
+                $"Email: {email ?? "NOT FOUND"}\n" +
+                $"Role: {role ?? "NOT FOUND"}\n" +
+                $"ApiCookie: {(string.IsNullOrWhiteSpace(apiCookie) ? "NOT FOUND" : "STORED")}");
+        }
+
         public IActionResult Privacy()
         {
             return View();
