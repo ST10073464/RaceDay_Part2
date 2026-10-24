@@ -1,0 +1,94 @@
+﻿@{
+    ViewData["Title"] = "Organiser Dashboard";
+
+    string? userEmail =
+        Context.Session.GetString("Email");
+}
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h1 class="fw-bold">
+            Organiser Dashboard
+        </h1>
+
+        <p class="text-muted mb-1">
+            Welcome, @userEmail
+        </p>
+
+        <p class="text-muted">
+            Manage your RaceDay events and participants.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        My Events
+                    </h5>
+
+                    <p class="card-text text-muted">
+                        View and manage the events you organise.
+                    </p>
+
+                   <a asp-controller="Organiser"
+                       asp-action="MyEvents"
+                       class="btn btn-outline-primary">
+                        Manage Events
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        Create Event
+                    </h5>
+
+                    <p class="card-text text-muted">
+                        Create a new running, walking, or cycling event.
+                    </p>
+
+                  <a asp-controller="Organiser"
+                     asp-action="CreateEvent"
+                     class="btn btn-primary">
+                      Create Event
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        Participants
+                    </h5>
+
+                    <p class="card-text text-muted">
+                        View participants enrolled in your events.
+                    </p>
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled>
+                        View Participants
+                    </button>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>

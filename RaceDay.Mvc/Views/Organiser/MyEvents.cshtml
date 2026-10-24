@@ -1,0 +1,131 @@
+﻿@model List<RaceDay.Mvc.Models.EventViewModel>
+
+@{
+    ViewData["Title"] = "My Events";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold">My Events</h1>
+            <p class="text-muted mb-0">
+                View and manage the RaceDay events you organise.
+            </p>
+        </div>
+
+        <a asp-controller="Organiser"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    @if (ViewBag.EventError != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.EventError
+        </div>
+    }
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+
+                <h4>No Events Yet</h4>
+
+                <p class="text-muted">
+                    You have not created any RaceDay events yet.
+                </p>
+
+                <a asp-controller="Organiser"
+                   asp-action="CreateEvent"
+                   class="btn btn-primary">
+                    Create Event
+                </a>
+
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+
+            @foreach (var raceEvent in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+
+                    <div class="card h-100 shadow-sm">
+
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between
+                                        align-items-start mb-3">
+
+                                <h5 class="card-title fw-bold mb-0">
+                                    @raceEvent.EventName
+                                </h5>
+
+                                <span class="badge bg-primary">
+                                    @raceEvent.EventType
+                                </span>
+
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(
+                                raceEvent.Description))
+                            {
+                                <p class="card-text text-muted">
+                                    @raceEvent.Description
+                                </p>
+                            }
+
+                            <hr />
+
+                            <p class="mb-2">
+                                <strong>Date:</strong>
+                                @raceEvent.EventDate.ToString("dd MMMM yyyy")
+                            </p>
+
+                            <p class="mb-2">
+                                <strong>Location:</strong>
+                                @raceEvent.Location
+                            </p>
+
+                            <p class="mb-2">
+                                <strong>Distance:</strong>
+                                @raceEvent.DistanceKm.ToString("0.00") km
+                            </p>
+
+                            <p class="mb-3">
+                                <strong>Event ID:</strong>
+                                @raceEvent.EventId
+                            </p>
+
+                        </div>
+
+                        <div class="card-footer bg-white">
+
+                            <div class="d-grid gap-2">
+
+                                <a asp-controller="Organiser"
+                                   asp-action="EditEvent"
+                                   asp-route-id="@raceEvent.EventId"
+                                   class="btn btn-outline-primary">
+                                    Manage Event
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>

@@ -133,6 +133,31 @@ public class RaceDayApiClient
             response);
     }
 
+    public async Task<List<EventViewModel>> GetMyEventsAsync()
+    {
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "api/events/mine");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return new List<EventViewModel>();
+        }
+
+        var events =
+            await ReadAsync<List<EventViewModel>>(response);
+
+        return events ?? new List<EventViewModel>();
+    }
+    public async Task<HttpResponseMessage> CreateEventAsync(
+    CreateEventViewModel model)
+    {
+        return await SendAsync(
+            HttpMethod.Post,
+            "api/events",
+            model);
+    }
+
     // ---------------------------------------------------------
     // GET EVENT CATEGORIES
     // ---------------------------------------------------------
@@ -179,6 +204,57 @@ public class RaceDayApiClient
             await ReadAsync<List<EnrolmentViewModel>>(response);
 
         return enrolments ?? new List<EnrolmentViewModel>();
+    }
+
+    public async Task<EventViewModel?> GetEventByIdAsync(
+    int eventId)
+    {
+        var response = await SendAsync(
+            HttpMethod.Get,
+            $"api/events/{eventId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        return await ReadAsync<EventViewModel>(
+            response);
+    }
+
+    public async Task<HttpResponseMessage> UpdateEventAsync(
+    int eventId,
+    EditEventViewModel model)
+    {
+        return await SendAsync(
+            HttpMethod.Put,
+            $"api/events/{eventId}",
+            model);
+    }
+
+    public async Task<HttpResponseMessage> CreateCategoryAsync(
+    ManageCategoriesViewModel model)
+    {
+        var category = new
+        {
+            model.EventId,
+            model.CategoryName,
+            model.MinAge,
+            model.MaxAge,
+            model.DistanceKm
+        };
+
+        return await SendAsync(
+            HttpMethod.Post,
+            "api/categories",
+            category);
+    }
+    public async Task<HttpResponseMessage> DeleteCategoryAsync(
+    int categoryId)
+    {
+        return await SendAsync(
+            HttpMethod.Delete,
+            $"api/categories/{categoryId}");
     }
 
 }

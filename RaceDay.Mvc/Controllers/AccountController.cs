@@ -150,9 +150,21 @@ namespace RaceDay.Mvc.Controllers
                 TempData["SuccessMessage"] =
                     "Login successful.";
 
+                if (string.Equals(
+                     role.GetString(),
+                     "Organiser",
+                     StringComparison.OrdinalIgnoreCase))
+                {
+                    return RedirectToAction(
+                        "Index",
+                        "Organiser");
+                }
+
                 return RedirectToAction(
                     "Index",
                     "Home");
+
+
             }
             catch (Exception ex)
             {

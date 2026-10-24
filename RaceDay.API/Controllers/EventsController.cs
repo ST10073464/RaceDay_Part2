@@ -42,6 +42,41 @@ public class EventsController : ControllerBase
         return Ok(events);
     }
 
+    // GET: api/events/mine
+    // Returns only events created by the logged-in organiser.
+    [HttpGet("mine")]
+    [Authorize(Roles = "Organiser")]
+    public async Task<IActionResult> GetMyEvents()
+    {
+        var userIdValue = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdValue, out var organiserId))
+        {
+            return Unauthorized();
+        }
+
+        var events = await _context.Events
+            .AsNoTracking()
+            .Where(e => e.OrganiserId == organiserId)
+            .OrderBy(e => e.EventDate)
+            .Select(e => new
+            {
+                e.EventId,
+                e.EventName,
+                e.Description,
+                e.EventDate,
+                e.Location,
+                e.DistanceKm,
+                e.EventType,
+                e.BannerImageUrl,
+                e.OrganiserId
+            })
+            .ToListAsync();
+
+        return Ok(events);
+    }
+
     // GET: api/events/{id}
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetEventById(int id)

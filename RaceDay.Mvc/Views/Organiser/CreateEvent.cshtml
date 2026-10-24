@@ -1,0 +1,218 @@
+﻿@model RaceDay.Mvc.Models.CreateEventViewModel
+
+@{
+    ViewData["Title"] = "Create Event";
+}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-4">
+
+                <div>
+                    <h1 class="fw-bold">Create Event</h1>
+
+                    <p class="text-muted mb-0">
+                        Create a new RaceDay event for participants.
+                    </p>
+                </div>
+
+                <a asp-controller="Organiser"
+                   asp-action="Index"
+                   class="btn btn-outline-secondary">
+                    Back to Dashboard
+                </a>
+
+            </div>
+
+            <div class="card shadow-sm">
+
+                <div class="card-body p-4">
+
+                    <form asp-controller="Organiser"
+                          asp-action="CreateEvent"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3">
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label asp-for="EventName"
+                                   class="form-label">
+                            </label>
+
+                            <input asp-for="EventName"
+                                   class="form-control"
+                                   placeholder="Enter event name" />
+
+                            <span asp-validation-for="EventName"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label asp-for="Description"
+                                   class="form-label">
+                            </label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Enter event description">
+                            </textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="EventDate"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="EventDate"
+                                       class="form-control" />
+
+                                <span asp-validation-for="EventDate"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="Location"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="Location"
+                                       class="form-control"
+                                       placeholder="Enter event location" />
+
+                                <span asp-validation-for="Location"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="DistanceKm"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="DistanceKm"
+                                       class="form-control"
+                                       type="number"
+                                       min="0.01"
+                                       step="0.01"
+                                       placeholder="e.g. 10" />
+
+                                <span asp-validation-for="DistanceKm"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="EventType"
+                                       class="form-label">
+                                </label>
+
+                                <select asp-for="EventType"
+                                        class="form-select">
+
+                                    <option value="">
+                                        Select event type
+                                    </option>
+
+                                    <option value="Run">
+                                        Run
+                                    </option>
+
+                                    <option value="Walk">
+                                        Walk
+                                    </option>
+
+                                    <option value="Cycle">
+                                        Cycle
+                                    </option>
+
+                                </select>
+
+                                <span asp-validation-for="EventType"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="mb-4">
+
+                            <label asp-for="BannerImageUrl"
+                                   class="form-label">
+                            </label>
+
+                            <input asp-for="BannerImageUrl"
+                                   class="form-control"
+                                   placeholder="Optional image URL" />
+
+                            <span asp-validation-for="BannerImageUrl"
+                                  class="text-danger">
+                            </span>
+
+                            <div class="form-text">
+                                Optional. Enter a URL for the event banner image.
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+
+                            <a asp-controller="Organiser"
+                               asp-action="Index"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                Create Event
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
