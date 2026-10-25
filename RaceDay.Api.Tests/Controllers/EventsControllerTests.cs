@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using RaceDay.Api.Controllers;
 using RaceDay.Api.Models;
+using RaceDay.Api.Services;
 using RaceDay.Api.Tests.Helpers;
 using Xunit;
 
@@ -8,6 +10,29 @@ namespace RaceDay.Api.Tests.Controllers
 {
     public class EventsControllerTests
     {
+        private static BlobStorageService CreateBlobStorageService()
+        {
+            var settings =
+                new Dictionary<string, string?>
+                {
+                    ["AzureStorage:ConnectionString"] =
+                        "DefaultEndpointsProtocol=https;" +
+                        "AccountName=testaccount;" +
+                        "AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==;" +
+                        "EndpointSuffix=core.windows.net",
+
+                    ["AzureStorage:ProfilePicturesContainer"] =
+                        "profile-pictures"
+                };
+
+            IConfiguration configuration =
+                new ConfigurationBuilder()
+                    .AddInMemoryCollection(settings)
+                    .Build();
+
+            return new BlobStorageService(configuration);
+        }
+
         [Fact]
         public async Task GetEvents_ReturnsOk_WhenEventsExist()
         {
@@ -29,7 +54,13 @@ namespace RaceDay.Api.Tests.Controllers
 
             await context.SaveChangesAsync();
 
-            var controller = new EventsController(context);
+            var blobStorageService =
+                CreateBlobStorageService();
+
+            var controller =
+                new EventsController(
+                    context,
+                    blobStorageService);
 
             // Act
             var result = await controller.GetEvents();
@@ -44,7 +75,13 @@ namespace RaceDay.Api.Tests.Controllers
             // Arrange
             using var context = TestDbContextFactory.Create();
 
-            var controller = new EventsController(context);
+            var blobStorageService =
+                CreateBlobStorageService();
+
+            var controller =
+                new EventsController(
+                    context,
+                    blobStorageService);
 
             // Act
             var result = await controller.GetEventById(999999);

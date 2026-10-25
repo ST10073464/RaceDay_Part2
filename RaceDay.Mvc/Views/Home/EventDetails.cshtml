@@ -22,6 +22,16 @@
 
         <div class="card-body">
 
+            @if (!string.IsNullOrWhiteSpace(Model.Event.BannerImageUrl))
+            {
+                <div class="mb-4">
+                    <img src="@Model.Event.BannerImageUrl"
+                         alt="@Model.Event.EventName banner"
+                         class="img-fluid rounded border w-100"
+                         style="max-height: 350px; object-fit: cover;" />
+                </div>
+            }
+
             <div class="mb-4">
                 <span class="badge bg-primary">
                     @Model.Event.EventType

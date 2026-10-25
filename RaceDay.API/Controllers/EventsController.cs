@@ -4,6 +4,7 @@ using RaceDay.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
+using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
@@ -12,10 +13,14 @@ namespace RaceDay.Api.Controllers;
 public class EventsController : ControllerBase
 {
     private readonly RaceDayDbContext _context;
+    private readonly BlobStorageService _blobStorageService;
 
-    public EventsController(RaceDayDbContext context)
+    public EventsController(
+    RaceDayDbContext context,
+    BlobStorageService blobStorageService)
     {
         _context = context;
+        _blobStorageService = blobStorageService;
     }
 
     // GET: api/events
@@ -25,21 +30,28 @@ public class EventsController : ControllerBase
         var events = await _context.Events
             .AsNoTracking()
             .OrderBy(e => e.EventDate)
-            .Select(e => new
-            {
-                e.EventId,
-                e.EventName,
-                e.Description,
-                e.EventDate,
-                e.Location,
-                e.DistanceKm,
-                e.EventType,
-                e.BannerImageUrl,
-                e.OrganiserId
-            })
             .ToListAsync();
 
-        return Ok(events);
+        var result = events.Select(e => new
+        {
+            e.EventId,
+            e.EventName,
+            e.Description,
+            e.EventDate,
+            e.Location,
+            e.DistanceKm,
+            e.EventType,
+
+            BannerImageUrl =
+                string.IsNullOrWhiteSpace(e.BannerImageUrl)
+                    ? null
+                    : _blobStorageService.GetEventBannerReadUrl(
+                        e.BannerImageUrl),
+
+            e.OrganiserId
+        });
+
+        return Ok(result);
     }
 
     // GET: api/events/mine
@@ -81,34 +93,12 @@ public class EventsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetEventById(int id)
     {
-        var eventDetails = await _context.Events
+        var existingEvent = await _context.Events
             .AsNoTracking()
-            .Where(e => e.EventId == id)
-            .Select(e => new
-            {
-                e.EventId,
-                e.EventName,
-                e.Description,
-                e.EventDate,
-                e.Location,
-                e.DistanceKm,
-                e.EventType,
-                e.BannerImageUrl,
-                e.OrganiserId,
-                Categories = e.Categories
-                    .Select(c => new
-                    {
-                        c.CategoryId,
-                        c.CategoryName,
-                        c.MinAge,
-                        c.MaxAge,
-                        c.DistanceKm
-                    })
-                    .ToList()
-            })
-            .FirstOrDefaultAsync();
+            .Include(e => e.Categories)
+            .FirstOrDefaultAsync(e => e.EventId == id);
 
-        if (eventDetails == null)
+        if (existingEvent == null)
         {
             return NotFound(new
             {
@@ -116,9 +106,43 @@ public class EventsController : ControllerBase
             });
         }
 
+        string? bannerImageUrl = null;
+
+        if (!string.IsNullOrWhiteSpace(
+            existingEvent.BannerImageUrl))
+        {
+            bannerImageUrl =
+                _blobStorageService.GetEventBannerReadUrl(
+                    existingEvent.BannerImageUrl);
+        }
+
+        var eventDetails = new
+        {
+            existingEvent.EventId,
+            existingEvent.EventName,
+            existingEvent.Description,
+            existingEvent.EventDate,
+            existingEvent.Location,
+            existingEvent.DistanceKm,
+            existingEvent.EventType,
+
+            BannerImageUrl = bannerImageUrl,
+
+            existingEvent.OrganiserId,
+
+            Categories = existingEvent.Categories
+                .Select(c => new
+                {
+                    c.CategoryId,
+                    c.CategoryName,
+                    c.MinAge,
+                    c.MaxAge,
+                    c.DistanceKm
+                })
+                .ToList()
+        };
+
         return Ok(eventDetails);
-
-
     }
 
     // PUT: api/events/{id}
@@ -290,5 +314,65 @@ public class EventsController : ControllerBase
                 newEvent.EventType,
                 newEvent.OrganiserId
             });
+    }
+
+    // POST: api/events/{id}/banner
+    // Uploads a banner image for an event owned by the logged-in organiser.
+    [HttpPost("{id:int}/banner")]
+    [Authorize(Roles = "Organiser")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadEventBanner(
+        int id,
+        IFormFile bannerImage)
+    {
+        var userIdValue = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdValue, out var organiserId))
+        {
+            return Unauthorized();
+        }
+
+        var existingEvent = await _context.Events
+            .FirstOrDefaultAsync(e => e.EventId == id);
+
+        if (existingEvent == null)
+        {
+            return NotFound(new
+            {
+                message = "Event not found."
+            });
+        }
+
+        if (existingEvent.OrganiserId != organiserId)
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            string bannerImageUrl =
+                await _blobStorageService
+                    .UploadEventBannerAsync(
+                        bannerImage,
+                        existingEvent.EventId);
+
+            existingEvent.BannerImageUrl =
+                bannerImageUrl;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                bannerImageUrl
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
     }
 }

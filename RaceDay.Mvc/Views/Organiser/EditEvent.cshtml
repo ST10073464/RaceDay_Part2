@@ -168,21 +168,37 @@
 
                         <div class="mb-4">
 
-                            <label asp-for="BannerImageUrl"
-                                   class="form-label">
+                            <label class="form-label fw-semibold">
+                                Event Banner
                             </label>
 
                             <input asp-for="BannerImageUrl"
-                                   class="form-control"
-                                   placeholder="Optional image URL" />
+                                   type="hidden" />
 
-                            <span asp-validation-for="BannerImageUrl"
-                                  class="text-danger">
-                            </span>
+                            @if (!string.IsNullOrWhiteSpace(Model.BannerImageUrl))
+                            {
+                                <div class="mb-2">
+                                    <img src="@Model.BannerImageUrl"
+                                         alt="@Model.EventName event banner"
+                                         class="img-fluid rounded border"
+                                         style="max-height: 260px; width: 100%; object-fit: cover;" />
+                                </div>
 
-                            <div class="form-text">
-                                Optional. Enter a URL for the event banner image.
-                            </div>
+                                <div class="form-text">
+                                    Current event banner. Use the banner upload section below
+                                    to replace this image.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="border rounded bg-light text-muted text-center p-4">
+                                    No event banner uploaded.
+                                </div>
+
+                                <div class="form-text">
+                                    You can upload a banner image after saving the event.
+                                </div>
+                            }
 
                         </div>
 
@@ -237,6 +253,50 @@
                         </div>
 
                     </form>
+
+                    <hr class="my-4" />
+
+                    <div class="mb-2">
+                        <h5 class="fw-bold">
+                            Upload Event Banner
+                        </h5>
+
+                        <p class="text-muted">
+                            Upload a JPG, JPEG, PNG or WEBP image.
+                            Maximum file size: 5 MB.
+                        </p>
+
+                        <form asp-controller="Organiser"
+                              asp-action="UploadEventBanner"
+                              method="post"
+                              enctype="multipart/form-data">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="eventId"
+                                   value="@Model.EventId" />
+
+                            <div class="mb-3">
+                                <label for="bannerImage"
+                                       class="form-label">
+                                    Choose Banner Image
+                                </label>
+
+                                <input type="file"
+                                       id="bannerImage"
+                                       name="bannerImage"
+                                       class="form-control"
+                                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                            </div>
+
+                            <button type="submit"
+                                    class="btn btn-success">
+                                Upload Banner
+                            </button>
+
+                        </form>
+                    </div>
 
                 </div>
 

@@ -950,5 +950,79 @@ namespace RaceDay.Mvc.Controllers
 
             return fallbackMessage;
         }
+
+        // ---------------------------------------------------------
+        // UPLOAD EVENT BANNER
+        // ---------------------------------------------------------
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadEventBanner(
+            int eventId,
+            IFormFile? bannerImage)
+        {
+            string? userRole =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                userRole,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            if (bannerImage == null ||
+                bannerImage.Length == 0)
+            {
+                TempData["ErrorMessage"] =
+                    "Please select an event banner image.";
+
+                return RedirectToAction(
+                    nameof(EditEvent),
+                    new { id = eventId });
+            }
+
+            try
+            {
+                using HttpResponseMessage response =
+                    await _apiClient.UploadEventBannerAsync(
+                        eventId,
+                        bannerImage);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Event banner uploaded successfully.";
+                }
+                else
+                {
+                    string error =
+                        await response.Content.ReadAsStringAsync();
+
+                    _logger.LogWarning(
+                        "Event banner upload failed. API response: {Error}",
+                        error);
+
+                    TempData["ErrorMessage"] =
+                        "The event banner could not be uploaded.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while uploading the event banner.");
+
+                TempData["ErrorMessage"] =
+                    "An unexpected error occurred while uploading the event banner.";
+            }
+
+            return RedirectToAction(
+                nameof(EditEvent),
+                new { id = eventId });
+        }
     }
 }

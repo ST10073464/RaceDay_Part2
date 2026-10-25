@@ -443,6 +443,58 @@ public class RaceDayApiClient
         request.Content = content;
 
         return await _client.SendAsync(request);
+
+
     }
+
+    // ---------------------------------------------------------
+    // UPLOAD EVENT BANNER
+    // ---------------------------------------------------------
+
+    public async Task<HttpResponseMessage> UploadEventBannerAsync(
+        int eventId,
+        IFormFile bannerImage)
+    {
+        using var request =
+            new HttpRequestMessage(
+                HttpMethod.Post,
+                $"api/events/{eventId}/banner");
+
+        var session =
+            _httpContextAccessor.HttpContext?.Session;
+
+        var cookie =
+            session?.GetString("ApiCookie");
+
+        if (!string.IsNullOrWhiteSpace(cookie))
+        {
+            request.Headers.Add("Cookie", cookie);
+        }
+
+        using var content =
+            new MultipartFormDataContent();
+
+        await using Stream stream =
+            bannerImage.OpenReadStream();
+
+        using var fileContent =
+            new StreamContent(stream);
+
+        fileContent.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue(
+                string.IsNullOrWhiteSpace(bannerImage.ContentType)
+                    ? "application/octet-stream"
+                    : bannerImage.ContentType);
+
+        content.Add(
+            fileContent,
+            "bannerImage",
+            bannerImage.FileName);
+
+        request.Content = content;
+
+        return await _client.SendAsync(request);
+    }
+
 
 }

@@ -136,4 +136,74 @@ public class BlobStorageService
 
         return sasUri.ToString();
     }
+
+    // ---------------------------------------------------------
+    // GENERATE TEMPORARY READ-ONLY EVENT BANNER URL
+    // ---------------------------------------------------------
+    public string GetEventBannerReadUrl(
+        string bannerImageUrl)
+    {
+        return GetProfilePictureReadUrl(
+            bannerImageUrl);
+    }
+
+    public async Task<string> UploadEventBannerAsync(
+    IFormFile file,
+    int eventId)
+    {
+        if (file == null || file.Length == 0)
+        {
+            throw new ArgumentException(
+                "An event banner image is required.",
+                nameof(file));
+        }
+
+        string extension =
+            Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        string[] allowedExtensions =
+        {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            throw new ArgumentException(
+                "Only JPG, JPEG, PNG and WEBP images are allowed.");
+        }
+
+        const long maximumFileSize = 5 * 1024 * 1024;
+
+        if (file.Length > maximumFileSize)
+        {
+            throw new ArgumentException(
+                "The event banner image cannot exceed 5 MB.");
+        }
+
+        string blobName =
+            $"events/{eventId}/banner-{Guid.NewGuid():N}{extension}";
+
+        BlobClient blobClient =
+            _containerClient.GetBlobClient(blobName);
+
+        BlobHttpHeaders headers = new()
+        {
+            ContentType = file.ContentType
+        };
+
+        await using Stream stream =
+            file.OpenReadStream();
+
+        await blobClient.UploadAsync(
+            stream,
+            new BlobUploadOptions
+            {
+                HttpHeaders = headers
+            });
+
+        return blobClient.Uri.ToString();
+    }
 }
