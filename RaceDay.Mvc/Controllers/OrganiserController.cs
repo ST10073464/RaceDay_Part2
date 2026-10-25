@@ -308,5 +308,302 @@ namespace RaceDay.Mvc.Controllers
                 return View(model);
             }
         }
+
+        // =========================================================
+        // ORGANISER - MANAGE EVENT CATEGORIES
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> ManageCategories(int eventId)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                role,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                EventViewModel? eventDetails =
+                    await _apiClient.GetEventByIdAsync(eventId);
+
+                if (eventDetails == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "The event could not be found.";
+
+                    return RedirectToAction(
+                        nameof(MyEvents));
+                }
+
+                List<CategoryViewModel> categories =
+                    await _apiClient.GetEventCategoriesAsync(
+                        eventId);
+
+                var model =
+                    new ManageCategoriesViewModel
+                    {
+                        EventId = eventDetails.EventId,
+                        EventName = eventDetails.EventName,
+                        Categories = categories,
+                        MinAge = 0,
+                        MaxAge = 99,
+                        DistanceKm = eventDetails.DistanceKm
+                    };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load categories for event {EventId}.",
+                    eventId);
+
+                TempData["ErrorMessage"] =
+                    "The event categories could not be loaded.";
+
+                return RedirectToAction(
+                    nameof(MyEvents));
+            }
+        }
+
+
+        // =========================================================
+        // ORGANISER - CREATE CATEGORY
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCategory(
+            ManageCategoriesViewModel model)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                role,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            if (model.MaxAge < model.MinAge)
+            {
+                ModelState.AddModelError(
+                    nameof(model.MaxAge),
+                    "Maximum age cannot be less than minimum age.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                EventViewModel? eventDetails =
+                    await _apiClient.GetEventByIdAsync(
+                        model.EventId);
+
+                model.EventName =
+                    eventDetails?.EventName ??
+                    "RaceDay Event";
+
+                model.Categories =
+                    await _apiClient.GetEventCategoriesAsync(
+                        model.EventId);
+
+                return View(
+                    "ManageCategories",
+                    model);
+            }
+
+            try
+            {
+                using HttpResponseMessage response =
+                    await _apiClient.CreateCategoryAsync(
+                        model);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Category created successfully.";
+
+                    return RedirectToAction(
+                        nameof(ManageCategories),
+                        new
+                        {
+                            eventId = model.EventId
+                        });
+                }
+
+                string message =
+                    await response.Content.ReadAsStringAsync();
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    GetApiErrorMessage(
+                        message,
+                        "The category could not be created."));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to create category for event {EventId}.",
+                    model.EventId);
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "The category could not be created at this time.");
+            }
+
+            EventViewModel? currentEvent =
+                await _apiClient.GetEventByIdAsync(
+                    model.EventId);
+
+            model.EventName =
+                currentEvent?.EventName ??
+                "RaceDay Event";
+
+            model.Categories =
+                await _apiClient.GetEventCategoriesAsync(
+                    model.EventId);
+
+            return View(
+                "ManageCategories",
+                model);
+        }
+
+
+        // =========================================================
+        // ORGANISER - DELETE CATEGORY
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCategory(
+            int categoryId,
+            int eventId)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                role,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                using HttpResponseMessage response =
+                    await _apiClient.DeleteCategoryAsync(
+                        categoryId);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Category deleted successfully.";
+                }
+                else if (
+                    response.StatusCode ==
+                    System.Net.HttpStatusCode.Conflict)
+                {
+                    TempData["ErrorMessage"] =
+                        "This category cannot be deleted because participants are already enrolled in it.";
+                }
+                else if (
+                    response.StatusCode ==
+                    System.Net.HttpStatusCode.Forbidden)
+                {
+                    TempData["ErrorMessage"] =
+                        "You are not authorised to delete this category.";
+                }
+                else if (
+                    response.StatusCode ==
+                    System.Net.HttpStatusCode.NotFound)
+                {
+                    TempData["ErrorMessage"] =
+                        "The category could not be found.";
+                }
+                else
+                {
+                    string message =
+                        await response.Content.ReadAsStringAsync();
+
+                    TempData["ErrorMessage"] =
+                        GetApiErrorMessage(
+                            message,
+                            "The category could not be deleted.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to delete category {CategoryId}.",
+                    categoryId);
+
+                TempData["ErrorMessage"] =
+                    "The category could not be deleted at this time.";
+            }
+
+            return RedirectToAction(
+                nameof(ManageCategories),
+                new
+                {
+                    eventId
+                });
+        }
+
+
+        // =========================================================
+        // API ERROR MESSAGE HELPER
+        // =========================================================
+        private static string GetApiErrorMessage(
+            string responseContent,
+            string fallbackMessage)
+        {
+            if (string.IsNullOrWhiteSpace(
+                responseContent))
+            {
+                return fallbackMessage;
+            }
+
+            try
+            {
+                using System.Text.Json.JsonDocument document =
+                    System.Text.Json.JsonDocument.Parse(
+                        responseContent);
+
+                if (document.RootElement.TryGetProperty(
+                    "message",
+                    out System.Text.Json.JsonElement messageElement))
+                {
+                    string? message =
+                        messageElement.GetString();
+
+                    if (!string.IsNullOrWhiteSpace(
+                        message))
+                    {
+                        return message;
+                    }
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // Fall back to the supplied friendly message.
+            }
+
+            return fallbackMessage;
+        }
     }
 }

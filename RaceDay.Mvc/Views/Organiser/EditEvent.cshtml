@@ -186,18 +186,37 @@
 
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2">
+                        <div class="d-flex justify-content-between
+                            align-items-center gap-2">
 
                             <a asp-controller="Organiser"
-                               asp-action="MyEvents"
-                               class="btn btn-outline-secondary">
-                                Cancel
+                               asp-action="ManageCategories"
+                               asp-route-eventId="@Model.EventId"
+                               class="btn btn-outline-primary">
+
+                                Manage Categories
+
                             </a>
 
-                            <button type="submit"
-                                    class="btn btn-primary">
-                                Save Changes
-                            </button>
+
+                            <div class="d-flex gap-2">
+
+                                <a asp-controller="Organiser"
+                                   asp-action="MyEvents"
+                                   class="btn btn-outline-secondary">
+
+                                    Cancel
+
+                                </a>
+
+                                <button type="submit"
+                                        class="btn btn-primary">
+
+                                    Save Changes
+
+                                </button>
+
+                            </div>
 
                         </div>
 

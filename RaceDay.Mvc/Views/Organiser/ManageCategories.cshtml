@@ -1,0 +1,338 @@
+﻿@model RaceDay.Mvc.Models.ManageCategoriesViewModel
+
+@{
+    ViewData["Title"] = "Manage Categories";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between
+        align-items-center mb-4">
+
+        <div>
+            <h1 class="fw-bold">
+                Manage Categories
+            </h1>
+
+            <p class="text-muted mb-0">
+                @Model.EventName
+            </p>
+        </div>
+
+        <a asp-controller="Organiser"
+           asp-action="EditEvent"
+           asp-route-id="@Model.EventId"
+           class="btn btn-outline-secondary">
+            Back to Event
+        </a>
+
+    </div>
+
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success
+            alert-dismissible fade show">
+
+            @TempData["SuccessMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
+
+        </div>
+    }
+
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger
+            alert-dismissible fade show">
+
+            @TempData["ErrorMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
+
+        </div>
+    }
+
+
+    <div class="row g-4">
+
+        <!-- ========================================= -->
+        <!-- EXISTING CATEGORIES -->
+        <!-- ========================================= -->
+
+        <div class="col-lg-7">
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-white">
+
+                    <h5 class="mb-0">
+                        Existing Categories
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    @if (
+                        Model.Categories == null ||
+                        Model.Categories.Count == 0)
+                    {
+                        <div class="text-center py-5">
+
+                            <h5>
+                                No Categories Yet
+                            </h5>
+
+                            <p class="text-muted mb-0">
+                                Add the first category
+                                using the form.
+                            </p>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+
+                            <table class="table
+                                table-hover
+                                align-middle">
+
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            Category
+                                        </th>
+
+                                        <th>
+                                            Age Range
+                                        </th>
+
+                                        <th>
+                                            Distance
+                                        </th>
+
+                                        <th class="text-end">
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+
+                                    @foreach (
+                                        var category
+                                        in Model.Categories)
+                                    {
+                                        <tr>
+
+                                            <td>
+                                                <strong>
+                                                    @category.CategoryName
+                                                </strong>
+                                            </td>
+
+                                            <td>
+                                                @category.MinAge
+                                                -
+                                                @category.MaxAge
+                                            </td>
+
+                                            <td>
+                                                @category.DistanceKm.ToString("0.00")
+                                                km
+                                            </td>
+
+                                            <td class="text-end">
+
+                                                <form asp-controller="Organiser"
+                                                      asp-action="DeleteCategory"
+                                                      method="post"
+                                                      class="d-inline">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden"
+                                                           name="categoryId"
+                                                           value="@category.CategoryId" />
+
+                                                    <input type="hidden"
+                                                           name="eventId"
+                                                           value="@Model.EventId" />
+
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Are you sure you want to delete this category?');">
+
+                                                        Delete
+
+                                                    </button>
+
+                                                </form>
+
+                                            </td>
+
+                                        </tr>
+                                    }
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- CREATE CATEGORY -->
+        <!-- ========================================= -->
+
+        <div class="col-lg-5">
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-white">
+
+                    <h5 class="mb-0">
+                        Add Category
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    <form asp-controller="Organiser"
+                          asp-action="CreateCategory"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <input asp-for="EventId"
+                               type="hidden" />
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3">
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label asp-for="CategoryName"
+                                   class="form-label">
+                            </label>
+
+                            <input asp-for="CategoryName"
+                                   class="form-control"
+                                   placeholder="e.g. 20km Open" />
+
+                            <span asp-validation-for="CategoryName"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="MinAge"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="MinAge"
+                                       class="form-control"
+                                       type="number"
+                                       min="0"
+                                       max="120" />
+
+                                <span asp-validation-for="MinAge"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="MaxAge"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="MaxAge"
+                                       class="form-control"
+                                       type="number"
+                                       min="0"
+                                       max="120" />
+
+                                <span asp-validation-for="MaxAge"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="mb-4">
+
+                            <label asp-for="DistanceKm"
+                                   class="form-label">
+                            </label>
+
+                            <input asp-for="DistanceKm"
+                                   class="form-control"
+                                   type="number"
+                                   min="0.01"
+                                   step="0.01" />
+
+                            <span asp-validation-for="DistanceKm"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <div class="d-grid">
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+
+                                Add Category
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+}
