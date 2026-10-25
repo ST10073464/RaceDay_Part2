@@ -67,8 +67,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+bool useHttpsRedirection =
+    builder.Configuration.GetValue(
+        "UseHttpsRedirection",
+        true);
 
-app.UseHttpsRedirection();
+if (useHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

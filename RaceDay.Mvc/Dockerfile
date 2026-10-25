@@ -12,8 +12,12 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
 COPY ["RaceDay.Mvc/RaceDay.Mvc.csproj", "RaceDay.Mvc/"]
+COPY ["RaceDay.Contracts/RaceDay.Contracts.csproj", "RaceDay.Contracts/"]
+
 RUN dotnet restore "./RaceDay.Mvc/RaceDay.Mvc.csproj"
+
 COPY . .
 WORKDIR "/src/RaceDay.Mvc"
 RUN dotnet build "./RaceDay.Mvc.csproj" -c $BUILD_CONFIGURATION -o /app/build
