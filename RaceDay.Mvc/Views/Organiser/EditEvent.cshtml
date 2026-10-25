@@ -264,16 +264,74 @@
                                 A banner is already uploaded for this event.
                             </p>
 
+                            <!-- MANAGE BANNER BUTTON -->
+
                             <button type="button"
                                     class="btn btn-outline-success"
                                     data-bs-toggle="collapse"
-                                    data-bs-target="#replaceBannerSection"
+                                    data-bs-target="#bannerOptions"
                                     aria-expanded="false"
-                                    aria-controls="replaceBannerSection">
-                                Replace Banner
+                                    aria-controls="bannerOptions">
+                                Manage Banner
                             </button>
 
-                            <div class="collapse mt-4"
+                            <!-- REPLACE / REMOVE / CANCEL OPTIONS -->
+
+                            <div class="collapse mt-3"
+                                 id="bannerOptions">
+
+                                <div class="border rounded p-3">
+
+                                    <p class="fw-semibold mb-3">
+                                        Would you like to replace or remove
+                                        this banner?
+                                    </p>
+
+                                    <div class="d-flex gap-2 flex-wrap">
+
+                                        <button type="button"
+                                                class="btn btn-success"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#replaceBannerSection"
+                                                aria-expanded="false"
+                                                aria-controls="replaceBannerSection">
+                                            Replace
+                                        </button>
+
+                                        <form asp-controller="Organiser"
+                                              asp-action="RemoveEventBanner"
+                                              method="post"
+                                              class="m-0"
+                                              onsubmit="return confirm('Are you sure you want to remove this event banner?');">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="eventId"
+                                                   value="@Model.EventId" />
+
+                                            <button type="submit"
+                                                    class="btn btn-outline-danger">
+                                                Remove
+                                            </button>
+
+                                        </form>
+
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                onclick="closeAllBannerOptions()">
+                                            Cancel
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <!-- REPLACE BANNER FORM -->
+
+                            <div class="collapse mt-3"
                                  id="replaceBannerSection">
 
                                 <div class="border rounded p-3">
@@ -315,8 +373,15 @@
                                         </div>
 
                                         <button type="submit"
-                                                class="btn btn-success">
+                                                class="btn btn-success me-2">
                                             Save New Banner
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#replaceBannerSection">
+                                            Cancel
                                         </button>
 
                                     </form>
@@ -389,3 +454,40 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
+<script>
+    function closeAllBannerOptions() {
+
+        const replaceSection =
+            document.getElementById(
+                'replaceBannerSection');
+
+        const bannerOptions =
+            document.getElementById(
+                'bannerOptions');
+
+        if (replaceSection) {
+
+            const replaceCollapse =
+                bootstrap.Collapse.getOrCreateInstance(
+                    replaceSection,
+                    {
+                        toggle: false
+                    });
+
+            replaceCollapse.hide();
+        }
+
+        if (bannerOptions) {
+
+            const optionsCollapse =
+                bootstrap.Collapse.getOrCreateInstance(
+                    bannerOptions,
+                    {
+                        toggle: false
+                    });
+
+            optionsCollapse.hide();
+        }
+    }
+</script>

@@ -1024,5 +1024,66 @@ namespace RaceDay.Mvc.Controllers
                 nameof(EditEvent),
                 new { id = eventId });
         }
+
+        // ---------------------------------------------------------
+        // REMOVE EVENT BANNER
+        // ---------------------------------------------------------
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveEventBanner(
+            int eventId)
+        {
+            string? userRole =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                userRole,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                using HttpResponseMessage response =
+                    await _apiClient.RemoveEventBannerAsync(
+                        eventId);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Event banner removed successfully.";
+                }
+                else
+                {
+                    string error =
+                        await response.Content.ReadAsStringAsync();
+
+                    _logger.LogWarning(
+                        "Event banner removal failed. API response: {Error}",
+                        error);
+
+                    TempData["ErrorMessage"] =
+                        "The event banner could not be removed.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while removing the event banner.");
+
+                TempData["ErrorMessage"] =
+                    "An unexpected error occurred while removing the event banner.";
+            }
+
+            return RedirectToAction(
+                nameof(EditEvent),
+                new { id = eventId });
+        }
     }
 }

@@ -523,5 +523,33 @@ public class RaceDayApiClient
         return await _client.SendAsync(request);
     }
 
+    // ---------------------------------------------------------
+    // REMOVE EVENT BANNER
+    // ---------------------------------------------------------
+
+    public async Task<HttpResponseMessage> RemoveEventBannerAsync(
+        int eventId)
+    {
+        using var request =
+            new HttpRequestMessage(
+                HttpMethod.Delete,
+                $"api/events/{eventId}/banner");
+
+        var session =
+            _httpContextAccessor.HttpContext?.Session;
+
+        var cookie =
+            session?.GetString("ApiCookie");
+
+        if (!string.IsNullOrWhiteSpace(cookie))
+        {
+            request.Headers.Add(
+                "Cookie",
+                cookie);
+        }
+
+        return await _client.SendAsync(request);
+    }
+
 
 }

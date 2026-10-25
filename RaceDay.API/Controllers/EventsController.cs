@@ -317,7 +317,8 @@ public class EventsController : ControllerBase
     }
 
     // POST: api/events/{id}/banner
-    // Uploads a banner image for an event owned by the logged-in organiser.
+    // Uploads or replaces a banner image for an event
+    // owned by the logged-in organiser.
     [HttpPost("{id:int}/banner")]
     [Authorize(Roles = "Organiser")]
     [Consumes("multipart/form-data")]
@@ -349,21 +350,51 @@ public class EventsController : ControllerBase
             return Forbid();
         }
 
+        // Keep the existing banner URL so that it can
+        // be deleted only after the new banner is saved.
+        string? oldBannerImageUrl =
+            existingEvent.BannerImageUrl;
+
         try
         {
+            // Upload the new banner first.
             string bannerImageUrl =
                 await _blobStorageService
                     .UploadEventBannerAsync(
                         bannerImage,
                         existingEvent.EventId);
 
+            // Update the event to use the new banner.
             existingEvent.BannerImageUrl =
                 bannerImageUrl;
 
             await _context.SaveChangesAsync();
 
+            // Delete the old banner only after the new
+            // banner has been uploaded and saved successfully.
+            if (!string.IsNullOrWhiteSpace(
+                    oldBannerImageUrl) &&
+                !string.Equals(
+                    oldBannerImageUrl,
+                    bannerImageUrl,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    await _blobStorageService.DeleteImageAsync(
+                        oldBannerImageUrl);
+                }
+                catch (Exception)
+                {
+                    // Do not fail the successful replacement
+                    // if cleanup of the old blob fails.
+                }
+            }
+
             return Ok(new
             {
+                message =
+                    "Event banner uploaded successfully.",
                 bannerImageUrl
             });
         }
@@ -373,6 +404,88 @@ public class EventsController : ControllerBase
             {
                 message = ex.Message
             });
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    message =
+                        "The event banner could not be uploaded."
+                });
+        }
+    }
+
+    // DELETE: api/events/{id}/banner
+    // Removes the banner image from an event
+    // owned by the logged-in organiser.
+    [HttpDelete("{id:int}/banner")]
+    [Authorize(Roles = "Organiser")]
+    public async Task<IActionResult> RemoveEventBanner(
+        int id)
+    {
+        var userIdValue = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdValue, out var organiserId))
+        {
+            return Unauthorized();
+        }
+
+        var existingEvent = await _context.Events
+            .FirstOrDefaultAsync(e => e.EventId == id);
+
+        if (existingEvent == null)
+        {
+            return NotFound(new
+            {
+                message = "Event not found."
+            });
+        }
+
+        if (existingEvent.OrganiserId != organiserId)
+        {
+            return Forbid();
+        }
+
+        if (string.IsNullOrWhiteSpace(
+            existingEvent.BannerImageUrl))
+        {
+            return BadRequest(new
+            {
+                message =
+                    "There is no event banner to remove."
+            });
+        }
+
+        string existingBannerUrl =
+            existingEvent.BannerImageUrl;
+
+        try
+        {
+            await _blobStorageService.DeleteImageAsync(
+                existingBannerUrl);
+
+            existingEvent.BannerImageUrl = null;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message =
+                    "Event banner removed successfully."
+            });
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    message =
+                        "The event banner could not be removed."
+                });
         }
     }
 }
