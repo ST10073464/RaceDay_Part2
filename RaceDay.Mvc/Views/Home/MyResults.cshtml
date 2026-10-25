@@ -27,14 +27,12 @@
 
     </div>
 
-
     @if (ViewBag.ResultsError != null)
     {
         <div class="alert alert-danger">
             @ViewBag.ResultsError
         </div>
     }
-
 
     @if (Model == null || Model.Count == 0)
     {
@@ -76,6 +74,16 @@
                             </p>
 
                             <hr />
+
+                            <p class="mb-2">
+
+                                <strong>
+                                    Position:
+                                </strong>
+
+                                @result.FinishingPosition
+
+                            </p>
 
                             <p class="mb-2">
 

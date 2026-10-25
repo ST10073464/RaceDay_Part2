@@ -38,9 +38,135 @@
                              style="width: 160px;
                         height: 160px;
                         object-fit: cover;" />
+
+                        <!-- MANAGE PICTURE BUTTON -->
+
+                        <div class="mt-2">
+
+                            <button type="button"
+                                    class="btn btn-outline-primary w-100"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#pictureOptions"
+                                    aria-expanded="false"
+                                    aria-controls="pictureOptions">
+                                Manage Picture
+                            </button>
+
+                        </div>
+
+                        <!-- REPLACE / REMOVE OPTIONS -->
+
+                        <div class="collapse mt-3"
+                             id="pictureOptions">
+
+                            <div class="border rounded p-3">
+
+                                <p class="fw-semibold mb-3">
+                                    Would you like to replace or
+                                    remove this picture?
+                                </p>
+
+                                <div class="d-flex gap-2
+                                    justify-content-center
+                                    flex-wrap">
+
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#replacePictureSection"
+                                            aria-expanded="false"
+                                            aria-controls="replacePictureSection">
+                                        Replace
+                                    </button>
+
+                                    <form asp-controller="Profile"
+                                          asp-action="RemovePicture"
+                                          method="post"
+                                          class="m-0"
+                                          onsubmit="return confirm('Are you sure you want to remove your profile picture?');">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit"
+                                                class="btn btn-outline-danger">
+                                            Remove
+                                        </button>
+
+                                    </form>
+
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            onclick="closeAllPictureOptions()">
+                                        Cancel
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- REPLACE PICTURE FORM -->
+
+                        <div class="collapse mt-3"
+                             id="replacePictureSection">
+
+                            <div class="border rounded p-3">
+
+                                <h6 class="fw-bold mb-3">
+                                    Replace Profile Picture
+                                </h6>
+
+                                <form asp-controller="Profile"
+                                      asp-action="UploadPicture"
+                                      method="post"
+                                      enctype="multipart/form-data">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <div class="mb-3 text-start">
+
+                                        <label for="profilePicture"
+                                               class="form-label">
+                                            Choose New Profile Picture
+                                        </label>
+
+                                        <input type="file"
+                                               id="profilePicture"
+                                               name="profilePicture"
+                                               class="form-control"
+                                               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                               required />
+
+                                        <div class="form-text">
+                                            JPG, JPEG, PNG or WEBP.
+                                            Maximum file size: 5 MB.
+                                        </div>
+
+                                    </div>
+
+                                    <button type="submit"
+                                            class="btn btn-primary w-100 mb-2">
+                                        Save New Picture
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-outline-secondary w-100"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#replacePictureSection">
+                                        Cancel
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </div>
                     }
                     else
                     {
+                        <!-- NO PROFILE PICTURE -->
+
                         <div class="rounded-circle border
                             d-flex align-items-center
                             justify-content-center
@@ -53,42 +179,44 @@
                             </span>
 
                         </div>
-                    }
 
-                    <form asp-controller="Profile"
-                          asp-action="UploadPicture"
-                          method="post"
-                          enctype="multipart/form-data">
+                        <!-- FIRST-TIME PICTURE UPLOAD -->
 
-                        @Html.AntiForgeryToken()
+                        <form asp-controller="Profile"
+                              asp-action="UploadPicture"
+                              method="post"
+                              enctype="multipart/form-data">
 
-                        <div class="mb-3 text-start">
+                            @Html.AntiForgeryToken()
 
-                            <label for="profilePicture"
-                                   class="form-label">
-                                Choose Profile Picture
-                            </label>
+                            <div class="mb-3 text-start">
 
-                            <input type="file"
-                                   id="profilePicture"
-                                   name="profilePicture"
-                                   class="form-control"
-                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                   required />
+                                <label for="profilePicture"
+                                       class="form-label">
+                                    Choose Profile Picture
+                                </label>
 
-                            <div class="form-text">
-                                JPG, JPEG, PNG or WEBP.
-                                Maximum file size: 5 MB.
+                                <input type="file"
+                                       id="profilePicture"
+                                       name="profilePicture"
+                                       class="form-control"
+                                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                       required />
+
+                                <div class="form-text">
+                                    JPG, JPEG, PNG or WEBP.
+                                    Maximum file size: 5 MB.
+                                </div>
+
                             </div>
 
-                        </div>
+                            <button type="submit"
+                                    class="btn btn-primary w-100">
+                                Upload Picture
+                            </button>
 
-                        <button type="submit"
-                                class="btn btn-primary w-100">
-                            Upload Picture
-                        </button>
-
-                    </form>
+                        </form>
+                    }
 
                 </div>
             </div>
@@ -235,3 +363,40 @@
     </div>
 
 </div>
+
+<script>
+    function closeAllPictureOptions() {
+
+        const replaceSection =
+            document.getElementById(
+                'replacePictureSection');
+
+        const pictureOptions =
+            document.getElementById(
+                'pictureOptions');
+
+        if (replaceSection) {
+
+            const replaceCollapse =
+                bootstrap.Collapse.getOrCreateInstance(
+                    replaceSection,
+                    {
+                        toggle: false
+                    });
+
+            replaceCollapse.hide();
+        }
+
+        if (pictureOptions) {
+
+            const optionsCollapse =
+                bootstrap.Collapse.getOrCreateInstance(
+                    pictureOptions,
+                    {
+                        toggle: false
+                    });
+
+            optionsCollapse.hide();
+        }
+    }
+</script>

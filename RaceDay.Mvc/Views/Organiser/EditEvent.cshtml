@@ -202,10 +202,9 @@
 
                         </div>
 
-                        <div class="d-flex justify-content-between
-                            align-items-center gap-2">
+                        <div class="mt-4">
 
-                            <div class="d-flex gap-2 flex-wrap">
+                            <div class="d-flex gap-2 flex-wrap mb-4">
 
                                 <a asp-controller="Organiser"
                                    asp-action="ManageCategories"
@@ -230,22 +229,19 @@
 
                             </div>
 
+                            <hr />
 
-                            <div class="d-flex gap-2">
+                            <div class="d-flex justify-content-end gap-2 mt-3">
 
                                 <a asp-controller="Organiser"
                                    asp-action="MyEvents"
                                    class="btn btn-outline-secondary">
-
                                     Cancel
-
                                 </a>
 
                                 <button type="submit"
                                         class="btn btn-primary">
-
                                     Save Changes
-
                                 </button>
 
                             </div>
@@ -256,47 +252,130 @@
 
                     <hr class="my-4" />
 
-                    <div class="mb-2">
-                        <h5 class="fw-bold">
-                            Upload Event Banner
-                        </h5>
+                    @if (!string.IsNullOrWhiteSpace(Model.BannerImageUrl))
+                    {
+                        <div class="mb-2">
 
-                        <p class="text-muted">
-                            Upload a JPG, JPEG, PNG or WEBP image.
-                            Maximum file size: 5 MB.
-                        </p>
+                            <h5 class="fw-bold">
+                                Event Banner
+                            </h5>
 
-                        <form asp-controller="Organiser"
-                              asp-action="UploadEventBanner"
-                              method="post"
-                              enctype="multipart/form-data">
+                            <p class="text-muted">
+                                A banner is already uploaded for this event.
+                            </p>
 
-                            @Html.AntiForgeryToken()
-
-                            <input type="hidden"
-                                   name="eventId"
-                                   value="@Model.EventId" />
-
-                            <div class="mb-3">
-                                <label for="bannerImage"
-                                       class="form-label">
-                                    Choose Banner Image
-                                </label>
-
-                                <input type="file"
-                                       id="bannerImage"
-                                       name="bannerImage"
-                                       class="form-control"
-                                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                            </div>
-
-                            <button type="submit"
-                                    class="btn btn-success">
-                                Upload Banner
+                            <button type="button"
+                                    class="btn btn-outline-success"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#replaceBannerSection"
+                                    aria-expanded="false"
+                                    aria-controls="replaceBannerSection">
+                                Replace Banner
                             </button>
 
-                        </form>
-                    </div>
+                            <div class="collapse mt-4"
+                                 id="replaceBannerSection">
+
+                                <div class="border rounded p-3">
+
+                                    <h6 class="fw-bold">
+                                        Replace Event Banner
+                                    </h6>
+
+                                    <p class="text-muted">
+                                        Choose a new JPG, JPEG, PNG or WEBP image.
+                                        Maximum file size: 5 MB.
+                                    </p>
+
+                                    <form asp-controller="Organiser"
+                                          asp-action="UploadEventBanner"
+                                          method="post"
+                                          enctype="multipart/form-data">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="eventId"
+                                               value="@Model.EventId" />
+
+                                        <div class="mb-3">
+
+                                            <label for="bannerImage"
+                                                   class="form-label">
+                                                Choose New Banner Image
+                                            </label>
+
+                                            <input type="file"
+                                                   id="bannerImage"
+                                                   name="bannerImage"
+                                                   class="form-control"
+                                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                                   required />
+
+                                        </div>
+
+                                        <button type="submit"
+                                                class="btn btn-success">
+                                            Save New Banner
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-2">
+
+                            <h5 class="fw-bold">
+                                Upload Event Banner
+                            </h5>
+
+                            <p class="text-muted">
+                                Upload a JPG, JPEG, PNG or WEBP image.
+                                Maximum file size: 5 MB.
+                            </p>
+
+                            <form asp-controller="Organiser"
+                                  asp-action="UploadEventBanner"
+                                  method="post"
+                                  enctype="multipart/form-data">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="eventId"
+                                       value="@Model.EventId" />
+
+                                <div class="mb-3">
+
+                                    <label for="bannerImage"
+                                           class="form-label">
+                                        Choose Banner Image
+                                    </label>
+
+                                    <input type="file"
+                                           id="bannerImage"
+                                           name="bannerImage"
+                                           class="form-control"
+                                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                           required />
+
+                                </div>
+
+                                <button type="submit"
+                                        class="btn btn-success">
+                                    Upload Banner
+                                </button>
+
+                            </form>
+
+                        </div>
+                    }
 
                 </div>
 

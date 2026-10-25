@@ -448,6 +448,33 @@ public class RaceDayApiClient
     }
 
     // ---------------------------------------------------------
+    // REMOVE CURRENT USER PROFILE PICTURE
+    // ---------------------------------------------------------
+
+    public async Task<HttpResponseMessage> RemoveProfilePictureAsync()
+    {
+        using var request =
+            new HttpRequestMessage(
+                HttpMethod.Delete,
+                "api/profile/picture");
+
+        var session =
+            _httpContextAccessor.HttpContext?.Session;
+
+        var cookie =
+            session?.GetString("ApiCookie");
+
+        if (!string.IsNullOrWhiteSpace(cookie))
+        {
+            request.Headers.Add(
+                "Cookie",
+                cookie);
+        }
+
+        return await _client.SendAsync(request);
+    }
+
+    // ---------------------------------------------------------
     // UPLOAD EVENT BANNER
     // ---------------------------------------------------------
 

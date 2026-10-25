@@ -149,20 +149,50 @@ public class ProfileController : ControllerBase
             });
         }
 
+        // Keep the existing picture URL so that it can
+        // be deleted only after the new picture is saved.
+        string? oldProfilePictureUrl =
+            user.ProfilePictureUrl;
+
         try
         {
+            // Upload the new picture first.
             string profilePictureUrl =
                 await _blobStorageService.UploadProfilePictureAsync(
                     profilePicture,
                     userId);
 
-            user.ProfilePictureUrl = profilePictureUrl;
+            // Update the database to use the new picture.
+            user.ProfilePictureUrl =
+                profilePictureUrl;
 
             await _context.SaveChangesAsync();
 
+            // Only after the new picture has been uploaded
+            // and saved successfully do we remove the old one.
+            if (!string.IsNullOrWhiteSpace(
+                    oldProfilePictureUrl) &&
+                !string.Equals(
+                    oldProfilePictureUrl,
+                    profilePictureUrl,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    await _blobStorageService.DeleteImageAsync(
+                        oldProfilePictureUrl);
+                }
+                catch (Exception)
+                {
+                    // Do not fail the successful replacement
+                    // if cleanup of the old blob fails.
+                }
+            }
+
             return Ok(new
             {
-                message = "Profile picture uploaded successfully.",
+                message =
+                    "Profile picture uploaded successfully.",
                 profilePictureUrl
             });
         }
@@ -181,6 +211,67 @@ public class ProfileController : ControllerBase
                 {
                     message =
                         "The profile picture could not be uploaded."
+                });
+        }
+    }
+
+    // DELETE: api/profile/picture
+    [HttpDelete("picture")]
+    public async Task<IActionResult> RemoveProfilePicture()
+    {
+        var userIdValue = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.UserId == userId);
+
+        if (user == null)
+        {
+            return NotFound(new
+            {
+                message = "User account was not found."
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(
+            user.ProfilePictureUrl))
+        {
+            return BadRequest(new
+            {
+                message = "There is no profile picture to remove."
+            });
+        }
+
+        string existingPictureUrl =
+            user.ProfilePictureUrl;
+
+        try
+        {
+            await _blobStorageService.DeleteImageAsync(
+                existingPictureUrl);
+
+            user.ProfilePictureUrl = null;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Profile picture removed successfully."
+            });
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    message =
+                        "The profile picture could not be removed."
                 });
         }
     }

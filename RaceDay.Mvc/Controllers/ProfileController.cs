@@ -200,5 +200,64 @@ namespace RaceDay.Mvc.Controllers
             }
         }
 
+        // ---------------------------------------------------------
+        // REMOVE CURRENT USER PROFILE PICTURE
+        // ---------------------------------------------------------
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemovePicture()
+        {
+            var userId =
+                HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                using HttpResponseMessage response =
+                    await _apiClient.RemoveProfilePictureAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Profile picture removed successfully.";
+
+                    return RedirectToAction(
+                        nameof(Index));
+                }
+
+                string apiError =
+                    await response.Content.ReadAsStringAsync();
+
+                _logger.LogWarning(
+                    "Profile picture removal failed. API response: {ApiError}",
+                    apiError);
+
+                TempData["ErrorMessage"] =
+                    "The profile picture could not be removed.";
+
+                return RedirectToAction(
+                    nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to remove the profile picture.");
+
+                TempData["ErrorMessage"] =
+                    "The profile picture could not be removed at this time.";
+
+                return RedirectToAction(
+                    nameof(Index));
+            }
+        }
+
     }
 }

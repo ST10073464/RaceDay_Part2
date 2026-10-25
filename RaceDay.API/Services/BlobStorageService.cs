@@ -206,4 +206,46 @@ public class BlobStorageService
 
         return blobClient.Uri.ToString();
     }
+    // ---------------------------------------------------------
+    // DELETE STORED IMAGE
+    // ---------------------------------------------------------
+
+    public async Task<bool> DeleteImageAsync(
+        string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return false;
+        }
+
+        Uri storedUri =
+            new Uri(imageUrl);
+
+        string containerPath =
+            $"/{_containerClient.Name}/";
+
+        int containerIndex =
+            storedUri.AbsolutePath.IndexOf(
+                containerPath,
+                StringComparison.OrdinalIgnoreCase);
+
+        if (containerIndex < 0)
+        {
+            throw new InvalidOperationException(
+                "The stored image URL is invalid.");
+        }
+
+        string blobName =
+            storedUri.AbsolutePath[
+                (containerIndex + containerPath.Length)..];
+
+        blobName =
+            Uri.UnescapeDataString(blobName);
+
+        BlobClient blobClient =
+            _containerClient.GetBlobClient(blobName);
+
+        return await blobClient.DeleteIfExistsAsync(
+            DeleteSnapshotsOption.IncludeSnapshots);
+    }
 }
