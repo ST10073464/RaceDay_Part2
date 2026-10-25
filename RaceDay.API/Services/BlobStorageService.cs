@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 
 namespace RaceDay.Api.Services;
 
@@ -81,5 +82,58 @@ public class BlobStorageService
             });
 
         return blobClient.Uri.ToString();
+    }
+
+    // ---------------------------------------------------------
+    // GENERATE TEMPORARY READ-ONLY PROFILE PICTURE URL
+    // ---------------------------------------------------------
+
+    public string GetProfilePictureReadUrl(
+        string profilePictureUrl)
+    {
+        if (string.IsNullOrWhiteSpace(profilePictureUrl))
+        {
+            return string.Empty;
+        }
+
+        Uri storedUri =
+            new Uri(profilePictureUrl);
+
+        string containerPath =
+            $"/{_containerClient.Name}/";
+
+        int containerIndex =
+            storedUri.AbsolutePath.IndexOf(
+                containerPath,
+                StringComparison.OrdinalIgnoreCase);
+
+        if (containerIndex < 0)
+        {
+            throw new InvalidOperationException(
+                "The stored profile picture URL is invalid.");
+        }
+
+        string blobName =
+            storedUri.AbsolutePath[
+                (containerIndex + containerPath.Length)..];
+
+        blobName =
+            Uri.UnescapeDataString(blobName);
+
+        BlobClient blobClient =
+            _containerClient.GetBlobClient(blobName);
+
+        if (!blobClient.CanGenerateSasUri)
+        {
+            throw new InvalidOperationException(
+                "A SAS URL cannot be generated for this blob.");
+        }
+
+        Uri sasUri =
+            blobClient.GenerateSasUri(
+                BlobSasPermissions.Read,
+                DateTimeOffset.UtcNow.AddMinutes(30));
+
+        return sasUri.ToString();
     }
 }

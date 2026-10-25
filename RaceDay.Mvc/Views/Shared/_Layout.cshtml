@@ -86,6 +86,46 @@
                                     My Enrolments
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Profile"
+                                   asp-action="Index">
+                                    My Profile
+                                </a>
+                            </li>
+
+                        }
+
+                        @if (isLoggedIn &&
+                            string.Equals(
+                                userRole,
+                                "Organiser",
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Organiser"
+                                   asp-action="Index">
+                                    Dashboard
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Organiser"
+                                   asp-action="MyEvents">
+                                    My Events
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-controller="Profile"
+                                   asp-action="Index">
+                                    My Profile
+                                </a>
+                            </li>
                         }
                         
                         @if (!isLoggedIn)

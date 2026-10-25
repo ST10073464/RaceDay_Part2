@@ -437,7 +437,7 @@ public class RaceDayApiClient
 
         content.Add(
             streamContent,
-            "file",
+            "profilePicture",
             profilePicture.FileName);
 
         request.Content = content;

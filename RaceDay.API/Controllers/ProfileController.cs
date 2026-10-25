@@ -56,6 +56,22 @@ public class ProfileController : ControllerBase
             return NotFound();
         }
 
+        if (!string.IsNullOrWhiteSpace(
+            user.ProfilePictureUrl))
+        {
+            try
+            {
+                user.ProfilePictureUrl =
+                    _blobStorageService
+                        .GetProfilePictureReadUrl(
+                            user.ProfilePictureUrl);
+            }
+            catch (Exception)
+            {
+                user.ProfilePictureUrl = null;
+            }
+        }
+
         return Ok(user);
     }
 
@@ -93,7 +109,6 @@ public class ProfileController : ControllerBase
         user.LastName = request.LastName.Trim();
         user.PhoneNumber = request.PhoneNumber;
         user.DateOfBirth = request.DateOfBirth;
-        user.ProfilePictureUrl = request.ProfilePictureUrl;
 
         await _context.SaveChangesAsync();
 

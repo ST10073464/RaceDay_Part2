@@ -5,9 +5,233 @@
 }
 
 <div class="container py-4">
-    <h1>My Profile</h1>
 
-    <p>
-        Manage your RaceDay personal information and profile picture.
-    </p>
+    <div class="mb-4">
+        <h1>My Profile</h1>
+
+        <p class="text-muted">
+            Manage your RaceDay personal information and profile picture.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ============================================= -->
+        <!-- PROFILE PICTURE -->
+        <!-- ============================================= -->
+
+        <div class="col-lg-4">
+
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+
+                    <h5 class="card-title mb-4">
+                        Profile Picture
+                    </h5>
+
+                    @if (!string.IsNullOrWhiteSpace(
+                        Model.ProfilePictureUrl))
+                    {
+                        <img src="@Model.ProfilePictureUrl"
+                             alt="Profile picture"
+                             class="rounded-circle border mb-3"
+                             style="width: 160px;
+                        height: 160px;
+                        object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div class="rounded-circle border
+                            d-flex align-items-center
+                            justify-content-center
+                            mx-auto mb-3 bg-light"
+                             style="width: 160px;
+                            height: 160px;">
+
+                            <span class="text-muted">
+                                No Photo
+                            </span>
+
+                        </div>
+                    }
+
+                    <form asp-controller="Profile"
+                          asp-action="UploadPicture"
+                          method="post"
+                          enctype="multipart/form-data">
+
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3 text-start">
+
+                            <label for="profilePicture"
+                                   class="form-label">
+                                Choose Profile Picture
+                            </label>
+
+                            <input type="file"
+                                   id="profilePicture"
+                                   name="profilePicture"
+                                   class="form-control"
+                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                   required />
+
+                            <div class="form-text">
+                                JPG, JPEG, PNG or WEBP.
+                                Maximum file size: 5 MB.
+                            </div>
+
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary w-100">
+                            Upload Picture
+                        </button>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ============================================= -->
+        <!-- PERSONAL INFORMATION -->
+        <!-- ============================================= -->
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+
+                    <h5 class="card-title mb-4">
+                        Personal Information
+                    </h5>
+
+                    <form asp-controller="Profile"
+                          asp-action="Update"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3">
+                        </div>
+
+                        <input asp-for="UserId"
+                               type="hidden" />
+
+                        <!-- First Name / Last Name -->
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="FirstName"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="FirstName"
+                                       class="form-control" />
+
+                                <span asp-validation-for="FirstName"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="LastName"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="LastName"
+                                       class="form-control" />
+
+                                <span asp-validation-for="LastName"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <!-- Email -->
+
+                        <div class="mb-3">
+
+                            <label asp-for="Email"
+                                   class="form-label">
+                            </label>
+
+                            <input asp-for="Email"
+                                   class="form-control"
+                                   readonly />
+
+                            <div class="form-text">
+                                Your login email address cannot be
+                                changed from this page.
+                            </div>
+
+                        </div>
+
+                        <!-- Phone / Date of Birth -->
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="PhoneNumber"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="PhoneNumber"
+                                       class="form-control"
+                                       placeholder="Enter phone number" />
+
+                                <span asp-validation-for="PhoneNumber"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label asp-for="DateOfBirth"
+                                       class="form-label">
+                                </label>
+
+                                <input asp-for="DateOfBirth"
+                                       class="form-control"
+                                       type="date" />
+
+                                <span asp-validation-for="DateOfBirth"
+                                      class="text-danger">
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <!-- Save Button -->
+
+                        <div class="d-flex justify-content-end">
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                Save Changes
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
