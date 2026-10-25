@@ -362,4 +362,87 @@ public class RaceDayApiClient
                new List<EventEnrolmentViewModel>();
     }
 
+    // ---------------------------------------------------------
+    // GET CURRENT USER PROFILE
+    // ---------------------------------------------------------
+
+    public async Task<ProfileViewModel?> GetProfileAsync()
+    {
+        using HttpResponseMessage response =
+            await SendAsync(
+                HttpMethod.Get,
+                "api/profile");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        return await ReadAsync<ProfileViewModel>(
+            response);
+    }
+
+    // ---------------------------------------------------------
+    // UPDATE CURRENT USER PROFILE
+    // ---------------------------------------------------------
+
+    public async Task<HttpResponseMessage> UpdateProfileAsync(
+        ProfileViewModel model)
+    {
+        return await SendAsync(
+            HttpMethod.Put,
+            "api/profile",
+            model);
+    }
+
+    // ---------------------------------------------------------
+    // UPLOAD CURRENT USER PROFILE PICTURE
+    // ---------------------------------------------------------
+
+    public async Task<HttpResponseMessage> UploadProfilePictureAsync(
+        IFormFile profilePicture)
+    {
+        using var request =
+            new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/profile/picture");
+
+        var session =
+            _httpContextAccessor.HttpContext?.Session;
+
+        var cookie =
+            session?.GetString("ApiCookie");
+
+        if (!string.IsNullOrWhiteSpace(cookie))
+        {
+            request.Headers.Add(
+                "Cookie",
+                cookie);
+        }
+
+        using var content =
+            new MultipartFormDataContent();
+
+        using var streamContent =
+            new StreamContent(
+                profilePicture.OpenReadStream());
+
+        if (!string.IsNullOrWhiteSpace(
+            profilePicture.ContentType))
+        {
+            streamContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    profilePicture.ContentType);
+        }
+
+        content.Add(
+            streamContent,
+            "file",
+            profilePicture.FileName);
+
+        request.Content = content;
+
+        return await _client.SendAsync(request);
+    }
+
 }

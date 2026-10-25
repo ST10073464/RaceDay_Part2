@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using RaceDay.Api.Models;
+using RaceDay.Api.Services;
 
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
@@ -54,6 +55,8 @@ builder.Services.AddAuthorization();
 // Use ASP.NET Core's secure password-hashing implementation.
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
+// Azure Blob Storage service for participant profile pictures.
+builder.Services.AddScoped<BlobStorageService>();
 
 var app = builder.Build();
 
