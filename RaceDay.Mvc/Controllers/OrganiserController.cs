@@ -260,7 +260,8 @@ namespace RaceDay.Mvc.Controllers
                         "Event updated successfully.";
 
                     return RedirectToAction(
-                        nameof(MyEvents));
+                        nameof(EditEvent),
+                        new { id = model.EventId });
                 }
 
                 if (response.StatusCode ==

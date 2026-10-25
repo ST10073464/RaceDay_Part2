@@ -34,7 +34,8 @@
 
                     <form asp-controller="Organiser"
                           asp-action="EditEvent"
-                          method="post">
+                          method="post"
+                          id="editEventForm">
 
                         @Html.AntiForgeryToken()
 
@@ -240,7 +241,9 @@
                                 </a>
 
                                 <button type="submit"
-                                        class="btn btn-primary">
+                                        id="eventSaveButton"
+                                        class="btn btn-primary"
+                                        disabled>
                                     Save Changes
                                 </button>
 
@@ -364,16 +367,17 @@
                                             </label>
 
                                             <input type="file"
-                                                   id="bannerImage"
+                                                   id="replacementEventBannerInput"
                                                    name="bannerImage"
                                                    class="form-control"
                                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                                                    required />
 
                                         </div>
-
                                         <button type="submit"
-                                                class="btn btn-success me-2">
+                                                id="saveNewEventBannerButton"
+                                                class="btn btn-success me-2"
+                                                disabled>
                                             Save New Banner
                                         </button>
 
@@ -424,7 +428,7 @@
                                     </label>
 
                                     <input type="file"
-                                           id="bannerImage"
+                                           id="newEventBannerInput"
                                            name="bannerImage"
                                            class="form-control"
                                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
@@ -433,7 +437,9 @@
                                 </div>
 
                                 <button type="submit"
-                                        class="btn btn-success">
+                                        id="uploadEventBannerButton"
+                                        class="btn btn-success"
+                                        disabled>
                                     Upload Banner
                                 </button>
 
@@ -490,4 +496,147 @@
             optionsCollapse.hide();
         }
     }
+</script>
+
+<script>
+    document.addEventListener(
+        'DOMContentLoaded',
+        function() {
+
+            const eventForm =
+                document.getElementById(
+                    'editEventForm');
+
+            const saveButton =
+                document.getElementById(
+                    'eventSaveButton');
+
+            if (!eventForm || !saveButton) {
+                return;
+            }
+
+            const editableFields =
+                Array.from(
+                    eventForm.querySelectorAll(
+                        'input:not([type="hidden"]):not([readonly]), select, textarea'
+                    )
+                );
+
+            const originalValues =
+                editableFields.map(field => ({
+                    field: field,
+                    value: field.value
+                }));
+
+            function eventHasChanges() {
+
+                return originalValues.some(
+                    item =>
+                        item.field.value !==
+                        item.value
+                );
+            }
+
+            function updateSaveButton() {
+
+                saveButton.disabled =
+                    !eventHasChanges();
+            }
+
+            editableFields.forEach(field => {
+
+                field.addEventListener(
+                    'input',
+                    updateSaveButton);
+
+                field.addEventListener(
+                    'change',
+                    updateSaveButton);
+            });
+
+            eventForm.addEventListener(
+                'submit',
+                function(event) {
+
+                    if (!eventHasChanges()) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const confirmed =
+                        window.confirm(
+                            'Are you sure you want to save these event changes?'
+                        );
+
+                    if (!confirmed) {
+                        event.preventDefault();
+                    }
+                });
+
+            updateSaveButton();
+        });
+</script>
+
+<script>
+    document.addEventListener(
+        'DOMContentLoaded',
+        function() {
+
+            const bannerInput =
+                document.getElementById(
+                    'newEventBannerInput');
+
+            const uploadBannerButton =
+                document.getElementById(
+                    'uploadEventBannerButton');
+
+            if (!bannerInput ||
+                !uploadBannerButton) {
+                return;
+            }
+
+            function updateBannerUploadButton() {
+
+                uploadBannerButton.disabled =
+                    bannerInput.files.length === 0;
+            }
+
+            bannerInput.addEventListener(
+                'change',
+                updateBannerUploadButton);
+
+            updateBannerUploadButton();
+        });
+</script>
+
+<script>
+    document.addEventListener(
+        'DOMContentLoaded',
+        function() {
+
+            const replacementBannerInput =
+                document.getElementById(
+                    'replacementEventBannerInput');
+
+            const saveNewBannerButton =
+                document.getElementById(
+                    'saveNewEventBannerButton');
+
+            if (!replacementBannerInput ||
+                !saveNewBannerButton) {
+                return;
+            }
+
+            function updateReplacementBannerButton() {
+
+                saveNewBannerButton.disabled =
+                    replacementBannerInput.files.length === 0;
+            }
+
+            replacementBannerInput.addEventListener(
+                'change',
+                updateReplacementBannerButton);
+
+            updateReplacementBannerButton();
+        });
 </script>

@@ -132,7 +132,7 @@
                                         </label>
 
                                         <input type="file"
-                                               id="profilePicture"
+                                               id="replacementProfilePictureInput"
                                                name="profilePicture"
                                                class="form-control"
                                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
@@ -146,7 +146,9 @@
                                     </div>
 
                                     <button type="submit"
-                                            class="btn btn-primary w-100 mb-2">
+                                            id="saveNewProfilePictureButton"
+                                            class="btn btn-primary me-2"
+                                            disabled>
                                         Save New Picture
                                     </button>
 
@@ -197,7 +199,7 @@
                                 </label>
 
                                 <input type="file"
-                                       id="profilePicture"
+                                       id="newProfilePictureInput"
                                        name="profilePicture"
                                        class="form-control"
                                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
@@ -211,7 +213,9 @@
                             </div>
 
                             <button type="submit"
-                                    class="btn btn-primary w-100">
+                                    id="uploadProfilePictureButton"
+                                    class="btn btn-primary"
+                                    disabled>
                                 Upload Picture
                             </button>
 
@@ -238,7 +242,8 @@
 
                     <form asp-controller="Profile"
                           asp-action="Update"
-                          method="post">
+                          method="post"
+                          id="profileInformationForm">
 
                         @Html.AntiForgeryToken()
 
@@ -344,14 +349,12 @@
 
                         <!-- Save Button -->
 
-                        <div class="d-flex justify-content-end">
-
-                            <button type="submit"
-                                    class="btn btn-primary">
-                                Save Changes
-                            </button>
-
-                        </div>
+                        <button type="submit"
+                                id="profileSaveButton"
+                                class="btn btn-primary"
+                                disabled>
+                            Save Changes
+                        </button>
 
                     </form>
 
@@ -399,4 +402,146 @@
             optionsCollapse.hide();
         }
     }
+</script>
+
+<script>
+    document.addEventListener(
+        'DOMContentLoaded',
+        function() {
+
+            const profileForm =
+                document.getElementById(
+                    'profileInformationForm');
+
+            const saveButton =
+                document.getElementById(
+                    'profileSaveButton');
+
+            if (!profileForm || !saveButton) {
+                return;
+            }
+
+            const editableFields =
+                Array.from(
+                    profileForm.querySelectorAll(
+                        'input:not([type="hidden"]):not([readonly]), select, textarea'
+                    )
+                );
+
+            const originalValues =
+                editableFields.map(field => ({
+                    field: field,
+                    value: field.value
+                }));
+
+            function profileHasChanges() {
+
+                return originalValues.some(
+                    item =>
+                        item.field.value !==
+                        item.value
+                );
+            }
+
+            function updateSaveButton() {
+
+                saveButton.disabled =
+                    !profileHasChanges();
+            }
+
+            editableFields.forEach(field => {
+
+                field.addEventListener(
+                    'input',
+                    updateSaveButton);
+
+                field.addEventListener(
+                    'change',
+                    updateSaveButton);
+            });
+
+            profileForm.addEventListener(
+                'submit',
+                function(event) {
+
+                    if (!profileHasChanges()) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const confirmed =
+                        window.confirm(
+                            'Are you sure you want to save these profile changes?'
+                        );
+
+                    if (!confirmed) {
+                        event.preventDefault();
+                    }
+                });
+
+            updateSaveButton();
+        });
+</script>
+
+<script>
+    document.addEventListener(
+        'DOMContentLoaded',
+        function() {
+
+            const fileInput =
+                document.getElementById(
+                    'newProfilePictureInput');
+
+            const uploadButton =
+                document.getElementById(
+                    'uploadProfilePictureButton');
+
+            if (!fileInput || !uploadButton) {
+                return;
+            }
+
+            function updateUploadButton() {
+
+                uploadButton.disabled =
+                    fileInput.files.length === 0;
+            }
+
+            fileInput.addEventListener(
+                'change',
+                updateUploadButton);
+
+            updateUploadButton();
+        });
+</script>
+
+<script>
+    document.addEventListener(
+        'DOMContentLoaded',
+        function() {
+
+            const replacementInput =
+                document.getElementById(
+                    'replacementProfilePictureInput');
+
+            const saveNewPictureButton =
+                document.getElementById(
+                    'saveNewProfilePictureButton');
+
+            if (!replacementInput ||
+                !saveNewPictureButton) {
+                return;
+            }
+
+            function updateReplacementButton() {
+
+                saveNewPictureButton.disabled =
+                    replacementInput.files.length === 0;
+            }
+
+            replacementInput.addEventListener(
+                'change',
+                updateReplacementButton);
+
+            updateReplacementButton();
+        });
 </script>
