@@ -1,36 +1,46 @@
-# This is a basic workflow to help you get started with Actions
+name: RaceDay CI
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
+      - POE
 
-  # Allows you to run this workflow manually from the Actions tab
+  pull_request:
+    branches:
+      - master
+      - POE
+
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+  build-and-test:
+    name: Build and Test RaceDay
+    runs-on: windows-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+      - name: Display .NET information
+        run: dotnet --info
+
+      - name: Restore solution
+        run: dotnet restore RaceDay.slnx
+
+      - name: Build RaceDay API
+        run: dotnet build RaceDay.API/RaceDay.API.csproj --configuration Release --no-restore
+
+      - name: Build RaceDay MVC
+        run: dotnet build RaceDay.Mvc/RaceDay.Mvc.csproj --configuration Release --no-restore
+
+      - name: Run API tests
+        run: dotnet test RaceDay.Api.Tests/RaceDay.Api.Tests.csproj --configuration Release --no-restore --verbosity normal
+
+      - name: Build complete solution
+        run: dotnet build RaceDay.slnx --configuration Release --no-restore
