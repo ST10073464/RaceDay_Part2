@@ -84,6 +84,24 @@
                                         @enrolment.EnrolmentStatus
                                     </span>
                                 }
+                                else if (string.Equals(
+                                    enrolment.EnrolmentStatus,
+                                    "Pending",
+                                    StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        @enrolment.EnrolmentStatus
+                                    </span>
+                                }
+                                else if (string.Equals(
+                                    enrolment.EnrolmentStatus,
+                                    "Cancelled",
+                                    StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="badge bg-danger">
+                                        @enrolment.EnrolmentStatus
+                                    </span>
+                                }
                                 else
                                 {
                                     <span class="badge bg-secondary">

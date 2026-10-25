@@ -1,4 +1,6 @@
-﻿@{
+﻿@model RaceDay.Mvc.Models.OrganiserDashboardViewModel
+
+@{
     ViewData["Title"] = "Organiser Dashboard";
 
     string? userEmail =
@@ -6,6 +8,10 @@
 }
 
 <div class="container py-4">
+
+    <!-- ============================================= -->
+    <!-- DASHBOARD HEADER -->
+    <!-- ============================================= -->
 
     <div class="mb-4">
         <h1 class="fw-bold">
@@ -21,10 +27,171 @@
         </p>
     </div>
 
+    <!-- ============================================= -->
+    <!-- DASHBOARD SUMMARY -->
+    <!-- ============================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <p class="text-muted mb-2">
+                        Total Events
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @Model.TotalEvents
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <p class="text-muted mb-2">
+                        Upcoming Events
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @Model.UpcomingEvents
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <p class="text-muted mb-2">
+                        Total Enrolments
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @Model.TotalEnrolments
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ============================================= -->
+    <!-- EVENT SUMMARY -->
+    <!-- ============================================= -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">
+                Event Summary
+            </h5>
+        </div>
+
+        <div class="card-body p-0">
+
+            @if (Model.Events.Count == 0)
+            {
+                <div class="p-4 text-center">
+
+                    <p class="text-muted mb-3">
+                        You have not created any events yet.
+                    </p>
+
+                    <a asp-controller="Organiser"
+                       asp-action="CreateEvent"
+                       class="btn btn-primary">
+                        Create Your First Event
+                    </a>
+
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>Event</th>
+                                <th>Date</th>
+                                <th>Location</th>
+                                <th>Type</th>
+                                <th>Enrolments</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var raceEvent in Model.Events)
+                            {
+                                <tr>
+
+                                    <td class="fw-semibold">
+                                        @raceEvent.EventName
+                                    </td>
+
+                                    <td>
+                                        @raceEvent.EventDate.ToString(
+                                            "dd MMM yyyy")
+                                    </td>
+
+                                    <td>
+                                        @raceEvent.Location
+                                    </td>
+
+                                    <td>
+                                        @raceEvent.EventType
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            @raceEvent.TotalEnrolments
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @if (raceEvent.IsUpcoming)
+                                        {
+                                            <span class="badge bg-success">
+                                                Upcoming
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Completed
+                                            </span>
+                                        }
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    <!-- ============================================= -->
+    <!-- ORGANISER ACTIONS -->
+    <!-- ============================================= -->
+
     <div class="row g-4">
 
         <div class="col-md-4">
+
             <div class="card h-100 shadow-sm">
+
                 <div class="card-body">
 
                     <h5 class="card-title">
@@ -35,18 +202,22 @@
                         View and manage the events you organise.
                     </p>
 
-                   <a asp-controller="Organiser"
+                    <a asp-controller="Organiser"
                        asp-action="MyEvents"
                        class="btn btn-outline-primary">
                         Manage Events
                     </a>
 
                 </div>
+
             </div>
+
         </div>
 
         <div class="col-md-4">
+
             <div class="card h-100 shadow-sm">
+
                 <div class="card-body">
 
                     <h5 class="card-title">
@@ -57,18 +228,22 @@
                         Create a new running, walking, or cycling event.
                     </p>
 
-                  <a asp-controller="Organiser"
-                     asp-action="CreateEvent"
-                     class="btn btn-primary">
-                      Create Event
+                    <a asp-controller="Organiser"
+                       asp-action="CreateEvent"
+                       class="btn btn-primary">
+                        Create Event
                     </a>
 
                 </div>
+
             </div>
+
         </div>
 
         <div class="col-md-4">
+
             <div class="card h-100 shadow-sm">
+
                 <div class="card-body">
 
                     <h5 class="card-title">
@@ -79,14 +254,16 @@
                         View participants enrolled in your events.
                     </p>
 
-                    <button type="button"
-                            class="btn btn-outline-secondary"
-                            disabled>
-                        View Participants
-                    </button>
+                    <a asp-controller="Organiser"
+                       asp-action="MyEvents"
+                       class="btn btn-outline-secondary">
+                        Select Event
+                    </a>
 
                 </div>
+
             </div>
+
         </div>
 
     </div>

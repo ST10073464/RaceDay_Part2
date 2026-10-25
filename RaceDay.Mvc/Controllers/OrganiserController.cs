@@ -18,7 +18,7 @@ namespace RaceDay.Mvc.Controllers
         }
 
         // ORGANISER DASHBOARD
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             var role =
                 HttpContext.Session.GetString("Role");
@@ -33,7 +33,64 @@ namespace RaceDay.Mvc.Controllers
                     "Account");
             }
 
-            return View();
+            List<EventViewModel> events =
+                await _apiClient.GetMyEventsAsync();
+
+            var dashboard =
+                new OrganiserDashboardViewModel();
+
+            DateOnly today =
+                DateOnly.FromDateTime(DateTime.Today);
+
+            foreach (EventViewModel raceEvent in events)
+            {
+                List<EventEnrolmentViewModel> enrolments;
+
+                try
+                {
+                    enrolments =
+                        await _apiClient.GetEventEnrolmentsAsync(
+                            raceEvent.EventId);
+                }
+                catch (HttpRequestException)
+                {
+                    enrolments =
+                        new List<EventEnrolmentViewModel>();
+                }
+
+                bool isUpcoming =
+                    raceEvent.EventDate >= today;
+
+                dashboard.Events.Add(
+                    new OrganiserDashboardEventViewModel
+                    {
+                        EventId = raceEvent.EventId,
+                        EventName = raceEvent.EventName,
+                        EventDate = raceEvent.EventDate,
+                        Location = raceEvent.Location,
+                        EventType = raceEvent.EventType,
+                        TotalEnrolments = enrolments.Count,
+                        IsUpcoming = isUpcoming
+                    });
+            }
+
+            dashboard.Events =
+                dashboard.Events
+                    .OrderBy(e => e.EventDate)
+                    .ToList();
+
+            dashboard.TotalEvents =
+                dashboard.Events.Count;
+
+            dashboard.UpcomingEvents =
+                dashboard.Events.Count(
+                    e => e.IsUpcoming);
+
+            dashboard.TotalEnrolments =
+                dashboard.Events.Sum(
+                    e => e.TotalEnrolments);
+
+            return View(dashboard);
         }
 
         // ORGANISER - MY EVENTS

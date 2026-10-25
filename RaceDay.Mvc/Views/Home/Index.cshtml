@@ -150,6 +150,157 @@ else
 
         </div>
 
+        <!-- EVENT FILTERS -->
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between
+                    align-items-center mb-3">
+
+                    <div>
+                        <h5 class="fw-bold mb-1">
+                            Filter Events
+                        </h5>
+
+                        <p class="text-muted mb-0">
+                            Find events that match your preferences.
+                        </p>
+                    </div>
+
+                    <button type="button"
+                            id="clearEventFilters"
+                            class="btn btn-outline-secondary btn-sm">
+                        Clear Filters
+                    </button>
+
+                </div>
+
+                <div class="row g-3">
+
+                    <!-- Event Type -->
+
+                    <div class="col-md-4">
+
+                        <label for="eventTypeFilter"
+                               class="form-label">
+                            Event Type
+                        </label>
+
+                        <select id="eventTypeFilter"
+                                class="form-select">
+
+                            <option value="">
+                                All Event Types
+                            </option>
+
+                            @foreach (var eventType in Model
+                                .Select(e => e.EventType)
+                                .Where(e => !string.IsNullOrWhiteSpace(e))
+                                .Distinct()
+                                .OrderBy(e => e))
+                            {
+                                <option value="@eventType">
+                                    @eventType
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <!-- Location -->
+
+                    <div class="col-md-4">
+
+                        <label for="locationFilter"
+                               class="form-label">
+                            Location
+                        </label>
+
+                        <select id="locationFilter"
+                                class="form-select">
+
+                            <option value="">
+                                All Locations
+                            </option>
+
+                            @foreach (var location in Model
+                                .Select(e => e.Location)
+                                .Where(e => !string.IsNullOrWhiteSpace(e))
+                                .Distinct()
+                                .OrderBy(e => e))
+                            {
+                                <option value="@location">
+                                    @location
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+                    <!-- Maximum Distance -->
+
+                    <div class="col-md-4">
+
+                        <label for="distanceFilter"
+                               class="form-label">
+                            Maximum Distance
+                        </label>
+
+                        <select id="distanceFilter"
+                                class="form-select">
+
+                            <option value="">
+                                Any Distance
+                            </option>
+
+                            <option value="5">
+                                Up to 5 km
+                            </option>
+
+                            <option value="10">
+                                Up to 10 km
+                            </option>
+
+                            <option value="21.1">
+                                Up to 21.1 km
+                            </option>
+
+                            <option value="42.2">
+                                Up to 42.2 km
+                            </option>
+
+                            <option value="100">
+                                Up to 100 km
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div class="mt-3">
+
+                    <span class="text-muted">
+                        Showing
+                        <strong id="visibleEventCount">
+                            @Model.Count
+                        </strong>
+                        of
+                        <strong>
+                            @Model.Count
+                        </strong>
+                        events
+                    </span>
+
+                </div>
+
+            </div>
+        </div>
+
 
         @if (Model == null || Model.Count == 0)
         {
@@ -163,7 +314,10 @@ else
 
                 @foreach (var raceEvent in Model)
                 {
-                    <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="col-lg-4 col-md-6 mb-4 event-card"
+                         data-event-type="@raceEvent.EventType"
+                         data-location="@raceEvent.Location"
+                         data-distance="@raceEvent.DistanceKm">
 
                         <div class="card shadow-sm h-100">
 
@@ -247,6 +401,128 @@ else
                 }
 
             </div>
+        }
+
+        @section Scripts
+        {
+            <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+
+                        const eventTypeFilter =
+                            document.getElementById("eventTypeFilter");
+
+                        const locationFilter =
+                            document.getElementById("locationFilter");
+
+                        const distanceFilter =
+                            document.getElementById("distanceFilter");
+
+                        const clearFiltersButton =
+                            document.getElementById("clearEventFilters");
+
+                        const visibleEventCount =
+                            document.getElementById("visibleEventCount");
+
+                        const eventCards =
+                            document.querySelectorAll(".event-card");
+
+                        if (!eventTypeFilter ||
+                            !locationFilter ||
+                            !distanceFilter ||
+                            !clearFiltersButton ||
+                            !visibleEventCount) {
+                            return;
+                        }
+
+                        function applyFilters() {
+
+                            const selectedType =
+                                eventTypeFilter.value
+                                    .trim()
+                                    .toLowerCase();
+
+                            const selectedLocation =
+                                locationFilter.value
+                                    .trim()
+                                    .toLowerCase();
+
+                            const selectedDistance =
+                                distanceFilter.value;
+
+                            let visibleCount = 0;
+
+                            eventCards.forEach(function(card) {
+
+                                const eventType =
+                                    (card.dataset.eventType || "")
+                                        .trim()
+                                        .toLowerCase();
+
+                                const location =
+                                    (card.dataset.location || "")
+                                        .trim()
+                                        .toLowerCase();
+
+                                const distance =
+                                    parseFloat(
+                                        card.dataset.distance || "0");
+
+                                const matchesType =
+                                    selectedType === "" ||
+                                    eventType === selectedType;
+
+                                const matchesLocation =
+                                    selectedLocation === "" ||
+                                    location === selectedLocation;
+
+                                const matchesDistance =
+                                    selectedDistance === "" ||
+                                    distance <= parseFloat(
+                                        selectedDistance);
+
+                                const isVisible =
+                                    matchesType &&
+                                    matchesLocation &&
+                                    matchesDistance;
+
+                                card.classList.toggle(
+                                    "d-none",
+                                    !isVisible);
+
+                                if (isVisible) {
+                                    visibleCount++;
+                                }
+                            });
+
+                            visibleEventCount.textContent =
+                                visibleCount.toString();
+                        }
+
+                        eventTypeFilter.addEventListener(
+                            "change",
+                            applyFilters);
+
+                        locationFilter.addEventListener(
+                            "change",
+                            applyFilters);
+
+                        distanceFilter.addEventListener(
+                            "change",
+                            applyFilters);
+
+                        clearFiltersButton.addEventListener(
+                            "click",
+                            function() {
+
+                                eventTypeFilter.value = "";
+                                locationFilter.value = "";
+                                distanceFilter.value = "";
+
+                                applyFilters();
+                            });
+
+                    });
+            </script>
         }
 
     </div>
