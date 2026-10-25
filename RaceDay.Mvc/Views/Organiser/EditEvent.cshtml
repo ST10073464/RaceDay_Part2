@@ -189,14 +189,30 @@
                         <div class="d-flex justify-content-between
                             align-items-center gap-2">
 
-                            <a asp-controller="Organiser"
-                               asp-action="ManageCategories"
-                               asp-route-eventId="@Model.EventId"
-                               class="btn btn-outline-primary">
+                            <div class="d-flex gap-2 flex-wrap">
 
-                                Manage Categories
+                                <a asp-controller="Organiser"
+                                   asp-action="ManageCategories"
+                                   asp-route-eventId="@Model.EventId"
+                                   class="btn btn-outline-primary">
+                                    Manage Categories
+                                </a>
 
-                            </a>
+                                <a asp-controller="Organiser"
+                                   asp-action="EventParticipants"
+                                   asp-route-eventId="@Model.EventId"
+                                   class="btn btn-outline-primary">
+                                    Participants
+                                </a>
+
+                                <a asp-controller="Organiser"
+                                   asp-action="EventResults"
+                                   asp-route-eventId="@Model.EventId"
+                                   class="btn btn-outline-success">
+                                    Event Results
+                                </a>
+
+                            </div>
 
 
                             <div class="d-flex gap-2">

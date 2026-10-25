@@ -235,6 +235,52 @@ namespace RaceDay.Mvc.Controllers
             }
         }
 
+        // ------------------------------------------------------------
+        // MY RESULTS
+        // ------------------------------------------------------------
+
+        [HttpGet]
+        public async Task<IActionResult> MyResults()
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            // Only logged-in participants may access this page.
+            if (!string.Equals(
+                role,
+                "Participant",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                List<ResultViewModel> results =
+                    await _apiClient.GetMyResultsAsync();
+
+                results = results
+                    .OrderByDescending(r => r.PublishedAt)
+                    .ToList();
+
+                return View(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load participant results.");
+
+                ViewBag.ResultsError =
+                    "Your results could not be loaded at this time.";
+
+                return View(
+                    new List<ResultViewModel>());
+            }
+        }
+
         // ---------------------------------------------------------
         // PRIVACY
         // ---------------------------------------------------------

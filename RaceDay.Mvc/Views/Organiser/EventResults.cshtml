@@ -1,0 +1,199 @@
+﻿@model RaceDay.Mvc.Models.EventResultsViewModel
+
+@{
+    ViewData["Title"] = "Event Results";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between
+                align-items-start mb-4">
+
+        <div>
+
+            <h1 class="fw-bold mb-1">
+                Event Results
+            </h1>
+
+            <h5 class="mb-2">
+                @Model.EventName
+            </h5>
+
+            <p class="text-muted mb-0">
+
+                @Model.EventDate.ToString("dd MMMM yyyy")
+                ·
+                @Model.Location
+
+            </p>
+
+        </div>
+
+
+        <div class="d-flex gap-2">
+
+            <a asp-controller="Organiser"
+               asp-action="EventParticipants"
+               asp-route-eventId="@Model.EventId"
+               class="btn btn-outline-primary">
+
+                Participants
+
+            </a>
+
+            <a asp-controller="Organiser"
+               asp-action="MyEvents"
+               class="btn btn-outline-secondary">
+
+                Back to My Events
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white">
+
+            <div class="d-flex justify-content-between
+                        align-items-center">
+
+                <h5 class="mb-0">
+                    Published Results
+                </h5>
+
+                <span class="badge bg-secondary">
+                    @Model.Results.Count
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card-body">
+
+            @if (
+                Model.Results == null ||
+                Model.Results.Count == 0)
+            {
+                <div class="text-center py-5">
+
+                    <h5>
+                        No Results Yet
+                    </h5>
+
+                    <p class="text-muted mb-0">
+
+                        Results will appear here
+                        after they are recorded.
+
+                    </p>
+
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table
+                                  table-hover
+                                  align-middle">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Position
+                                </th>
+
+                                <th>
+                                    Participant
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th>
+                                    Finish Time
+                                </th>
+
+                                <th>
+                                    Published
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @{
+                                int position = 1;
+                            }
+
+                            @foreach (
+                                var result
+                                in Model.Results)
+                            {
+                                <tr>
+
+                                    <td>
+
+                                        <strong>
+                                            @position
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <strong>
+                                            @result.ParticipantName
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        @result.CategoryName
+
+                                    </td>
+
+
+                                    <td>
+                                        <strong>
+                                            @result.FinishTime.ToString("hh\\:mm\\:ss")
+                                        </strong>
+                                    </td>
+
+
+                                    <td>
+                                        @(result.PublishedAt.ToString("dd MMM yyyy HH:mm"))
+                                    </td>
+
+                                </tr>
+
+                                position++;
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>

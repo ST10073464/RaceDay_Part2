@@ -1,0 +1,151 @@
+﻿@model RaceDay.Mvc.Models.RecordResultViewModel
+
+@{
+    ViewData["Title"] = "Record Result";
+}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+
+            <div class="d-flex justify-content-between
+                align-items-start mb-3">
+
+                <div>
+                    <h1 class="fw-bold mb-1">
+                        Record Result
+                    </h1>
+
+                    <p class="text-muted mb-0">
+                        @Model.EventName
+                    </p>
+                </div>
+
+                <a asp-controller="Organiser"
+                   asp-action="EventParticipants"
+                   asp-route-eventId="@Model.EventId"
+                   class="btn btn-outline-secondary">
+                    Back to Participants
+                </a>
+
+            </div>
+
+            <div class="card shadow-sm">
+
+                <div class="card-body p-4">
+
+                    <h5 class="fw-bold">
+                        @Model.ParticipantName
+                    </h5>
+
+                    <p class="text-muted mb-1">
+                        Category: @Model.CategoryName
+                    </p>
+
+                    <p class="text-muted mb-4">
+                        Enrolment ID: @Model.EnrolmentId
+                    </p>
+
+                    <form asp-controller="Organiser"
+                          asp-action="RecordResult"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <input asp-for="EnrolmentId"
+                               type="hidden" />
+
+                        <input asp-for="EventId"
+                               type="hidden" />
+
+                        <input asp-for="EventName"
+                               type="hidden" />
+
+                        <input asp-for="ParticipantName"
+                               type="hidden" />
+
+                        <input asp-for="CategoryName"
+                               type="hidden" />
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3">
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label asp-for="FinishTime"
+                                   class="form-label">
+                            </label>
+
+                            <input asp-for="FinishTime"
+                                   type="time"
+                                   step="1"
+                                   class="form-control" />
+
+                            <span asp-validation-for="FinishTime"
+                                  class="text-danger">
+                            </span>
+
+                            <div class="form-text">
+                                Enter the participant's finish time
+                                in hours, minutes and seconds.
+                            </div>
+
+                        </div>
+
+                        <div class="mb-4">
+
+                            <label asp-for="FinishingPosition"
+                                   class="form-label">
+                            </label>
+
+                            <input asp-for="FinishingPosition"
+                                   type="number"
+                                   min="1"
+                                   class="form-control"
+                                   placeholder="Enter finishing position" />
+
+                            <span asp-validation-for="FinishingPosition"
+                                  class="text-danger">
+                            </span>
+
+                            <div class="form-text">
+                                Enter the participant's overall
+                                finishing position.
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex
+                            justify-content-end
+                            gap-2">
+
+                            <a asp-controller="Organiser"
+                               asp-action="EventParticipants"
+                               asp-route-eventId="@Model.EventId"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                Publish Result
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

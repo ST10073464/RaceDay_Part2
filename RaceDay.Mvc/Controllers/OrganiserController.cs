@@ -564,6 +564,351 @@ namespace RaceDay.Mvc.Controllers
                 });
         }
 
+        // =========================================================
+        // ORGANISER - RECORD RESULT
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> RecordResult(
+            int eventId,
+            int enrolmentId)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                role,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                EventViewModel? eventDetails =
+                    await _apiClient.GetEventByIdAsync(
+                        eventId);
+
+                if (eventDetails == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "The event could not be found.";
+
+                    return RedirectToAction(
+                        nameof(MyEvents));
+                }
+
+                List<EventEnrolmentViewModel> enrolments =
+                    await _apiClient.GetEventEnrolmentsAsync(
+                        eventId);
+
+                EventEnrolmentViewModel? enrolment =
+                    enrolments.FirstOrDefault(
+                        e => e.EnrolmentId == enrolmentId);
+
+                if (enrolment == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "The participant enrolment could not be found.";
+
+                    return RedirectToAction(
+                        nameof(EventParticipants),
+                        new
+                        {
+                            eventId
+                        });
+                }
+
+                if (!string.Equals(
+                    enrolment.EnrolmentStatus,
+                    "Confirmed",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["ErrorMessage"] =
+                        "A result can only be recorded for a confirmed enrolment.";
+
+                    return RedirectToAction(
+                        nameof(EventParticipants),
+                        new
+                        {
+                            eventId
+                        });
+                }
+
+                var model =
+                    new RecordResultViewModel
+                    {
+                        EventId =
+                            eventDetails.EventId,
+
+                        EventName =
+                            eventDetails.EventName,
+
+                        EnrolmentId =
+                            enrolment.EnrolmentId,
+
+                        ParticipantName =
+                            enrolment.ParticipantName,
+
+                        CategoryName =
+                            enrolment.CategoryName
+                    };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load enrolment {EnrolmentId} for result capture.",
+                    enrolmentId);
+
+                TempData["ErrorMessage"] =
+                    "The result capture page could not be loaded.";
+
+                return RedirectToAction(
+                    nameof(EventParticipants),
+                    new
+                    {
+                        eventId
+                    });
+            }
+        }
+
+        // =========================================================
+        // ORGANISER - RECORD RESULT SUBMISSION
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordResult(
+            RecordResultViewModel model)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                role,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            if (model.FinishTime <= TimeSpan.Zero)
+            {
+                ModelState.AddModelError(
+                    nameof(model.FinishTime),
+                    "Finish time must be greater than zero.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                using HttpResponseMessage response =
+                    await _apiClient.RecordResultAsync(
+                        model);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Result recorded successfully.";
+
+                    return RedirectToAction(
+                        nameof(EventResults),
+                        new
+                        {
+                            eventId = model.EventId
+                        });
+                }
+
+                string message =
+                    await response.Content.ReadAsStringAsync();
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    GetApiErrorMessage(
+                        message,
+                        "The result could not be recorded."));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to record result for enrolment {EnrolmentId}.",
+                    model.EnrolmentId);
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "The result could not be recorded at this time.");
+            }
+
+            return View(model);
+        }
+
+        // =========================================================
+        // ORGANISER - EVENT RESULTS
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> EventResults(
+            int eventId)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            if (!string.Equals(
+                role,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                EventViewModel? eventDetails =
+                    await _apiClient.GetEventByIdAsync(
+                        eventId);
+
+                if (eventDetails == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "The event could not be found.";
+
+                    return RedirectToAction(
+                        nameof(MyEvents));
+                }
+
+                List<ResultViewModel> results =
+                    await _apiClient.GetEventResultsAsync(
+                        eventId);
+
+                var model =
+                    new EventResultsViewModel
+                    {
+                        EventId =
+                            eventDetails.EventId,
+
+                        EventName =
+                            eventDetails.EventName,
+
+                        EventDate =
+                            eventDetails.EventDate,
+
+                        Location =
+                            eventDetails.Location,
+
+                        Results =
+                            results
+                                .OrderBy(
+                                    r => r.FinishTime)
+                                .ToList()
+                    };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load results for event {EventId}.",
+                    eventId);
+
+                TempData["ErrorMessage"] =
+                    "The event results could not be loaded.";
+
+                return RedirectToAction(
+                    nameof(MyEvents));
+            }
+        }
+
+        // =========================================================
+        // ORGANISER - EVENT PARTICIPANTS
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> EventParticipants(int eventId)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            // Only organisers may access this page.
+            if (!string.Equals(
+                role,
+                "Organiser",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                // Load the event.
+                EventViewModel? eventDetails =
+                    await _apiClient.GetEventByIdAsync(eventId);
+
+                if (eventDetails == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "The event could not be found.";
+
+                    return RedirectToAction(
+                        nameof(MyEvents));
+                }
+
+                // Load enrolments for this event.
+                List<EventEnrolmentViewModel> enrolments =
+                    await _apiClient.GetEventEnrolmentsAsync(
+                        eventId);
+
+                var model =
+                    new EventParticipantsViewModel
+                    {
+                        EventId =
+                            eventDetails.EventId,
+
+                        EventName =
+                            eventDetails.EventName,
+
+                        EventDate =
+                            eventDetails.EventDate,
+
+                        Location =
+                            eventDetails.Location,
+
+                        Enrolments =
+                            enrolments
+                                .OrderBy(
+                                    e => e.ParticipantName)
+                                .ToList()
+                    };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load participants for event {EventId}.",
+                    eventId);
+
+                TempData["ErrorMessage"] =
+                    "The event participants could not be loaded.";
+
+                return RedirectToAction(
+                    nameof(MyEvents));
+            }
+        }
 
         // =========================================================
         // API ERROR MESSAGE HELPER

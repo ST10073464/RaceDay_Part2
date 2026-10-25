@@ -1,0 +1,283 @@
+﻿@model RaceDay.Mvc.Models.EventParticipantsViewModel
+
+@{
+    ViewData["Title"] = "Event Participants";
+
+    int totalParticipants = Model.Enrolments.Count;
+
+    int confirmedParticipants =
+        Model.Enrolments.Count(
+            e => string.Equals(
+                e.EnrolmentStatus,
+                "Confirmed",
+                StringComparison.OrdinalIgnoreCase));
+
+    int cancelledParticipants =
+        Model.Enrolments.Count(
+            e => string.Equals(
+                e.EnrolmentStatus,
+                "Cancelled",
+                StringComparison.OrdinalIgnoreCase));
+}
+
+<div class="container mt-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex justify-content-between
+        align-items-start mb-4">
+
+        <div>
+            <h1 class="fw-bold mb-1">
+                Event Participants
+            </h1>
+
+            <h5 class="mb-2">
+                @Model.EventName
+            </h5>
+
+            <p class="text-muted mb-0">
+                @Model.EventDate.ToString("dd MMMM yyyy")
+                ·
+                @Model.Location
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+
+            <a asp-controller="Organiser"
+               asp-action="ManageCategories"
+               asp-route-eventId="@Model.EventId"
+               class="btn btn-outline-primary">
+                Categories
+            </a>
+
+            <a asp-controller="Organiser"
+               asp-action="EventResults"
+               asp-route-eventId="@Model.EventId"
+               class="btn btn-outline-success">
+                Event Results
+            </a>
+
+            <a asp-controller="Organiser"
+               asp-action="MyEvents"
+               class="btn btn-outline-secondary">
+                Back to My Events
+            </a>
+
+        </div>
+    </div>
+
+
+    <!-- SUMMARY -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+
+                    <p class="text-muted mb-1">
+                        Total Enrolments
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @totalParticipants
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+
+                    <p class="text-muted mb-1">
+                        Confirmed
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @confirmedParticipants
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+
+                    <p class="text-muted mb-1">
+                        Cancelled
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @cancelledParticipants
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- PARTICIPANTS TABLE -->
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white">
+
+            <div class="d-flex justify-content-between
+                align-items-center">
+
+                <h5 class="mb-0">
+                    Participant Enrolments
+                </h5>
+
+                <span class="badge bg-secondary">
+                    @totalParticipants
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card-body">
+
+            @if (Model.Enrolments == null ||
+                 Model.Enrolments.Count == 0)
+            {
+                <div class="text-center py-5">
+
+                    <h5>
+                        No Participants Yet
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        No participants have enrolled
+                        in this event yet.
+                    </p>
+
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Participant</th>
+                                <th>Category</th>
+                                <th>Enrolment Date</th>
+                                <th>Status</th>
+                                <th>Enrolment ID</th>
+                                <th class="text-end">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var enrolment in Model.Enrolments)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <strong>
+                                            @enrolment.ParticipantName
+                                        </strong>
+
+                                        <div class="small text-muted">
+                                            Participant ID:
+                                            @enrolment.ParticipantId
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        @enrolment.CategoryName
+                                    </td>
+
+                                    <td>
+                                        @enrolment.EnrolmentDate.ToString("dd MMM yyyy HH:mm")
+                                    </td>
+
+                                    <td>
+
+                                        @if (string.Equals(
+                                            enrolment.EnrolmentStatus,
+                                            "Confirmed",
+                                            StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span class="badge bg-success">
+                                                Confirmed
+                                            </span>
+                                        }
+                                        else if (string.Equals(
+                                            enrolment.EnrolmentStatus,
+                                            "Cancelled",
+                                            StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Cancelled
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                @enrolment.EnrolmentStatus
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+                                        @enrolment.EnrolmentId
+                                    </td>
+
+                                    <td class="text-end">
+
+                                        @if (string.Equals(
+                                            enrolment.EnrolmentStatus,
+                                            "Confirmed",
+                                            StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <a asp-controller="Organiser"
+                                               asp-action="RecordResult"
+                                               asp-route-eventId="@Model.EventId"
+                                               asp-route-enrolmentId="@enrolment.EnrolmentId"
+                                               class="btn btn-sm btn-outline-primary">
+
+                                                Record Result
+
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                Not available
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>

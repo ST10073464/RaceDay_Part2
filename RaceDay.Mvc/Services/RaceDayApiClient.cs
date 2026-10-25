@@ -257,4 +257,109 @@ public class RaceDayApiClient
             $"api/categories/{categoryId}");
     }
 
+    // ------------------------------------------------------------
+    // RECORD RESULT
+    // ------------------------------------------------------------
+    public async Task<HttpResponseMessage> RecordResultAsync(
+        RecordResultViewModel model)
+    {
+        var result = new
+        {
+            model.EnrolmentId,
+            model.FinishTime,
+            model.FinishingPosition
+        };
+
+        return await SendAsync(
+            HttpMethod.Post,
+            "api/results",
+            result);
+    }
+
+
+    // ---------------------------------------------------------
+    // GET ORGANISER EVENT RESULTS
+    // ---------------------------------------------------------
+
+    public async Task<List<ResultViewModel>>
+        GetEventResultsAsync(int eventId)
+    {
+        using HttpResponseMessage response =
+            await SendAsync(
+                HttpMethod.Get,
+                $"api/results/event/{eventId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Unable to retrieve event results. " +
+                $"API returned {(int)response.StatusCode} " +
+                $"{response.StatusCode}.");
+        }
+
+        List<ResultViewModel>? results =
+            await ReadAsync<List<ResultViewModel>>(
+                response);
+
+        return results ??
+               new List<ResultViewModel>();
+    }
+
+
+    // ---------------------------------------------------------
+    // GET PARTICIPANT RESULTS
+    // ---------------------------------------------------------
+
+    public async Task<List<ResultViewModel>>
+        GetMyResultsAsync()
+    {
+        using HttpResponseMessage response =
+            await SendAsync(
+                HttpMethod.Get,
+                "api/results/mine");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Unable to retrieve participant results. " +
+                $"API returned {(int)response.StatusCode} " +
+                $"{response.StatusCode}.");
+        }
+
+        List<ResultViewModel>? results =
+            await ReadAsync<List<ResultViewModel>>(
+                response);
+
+        return results ??
+               new List<ResultViewModel>();
+    }
+
+    // ---------------------------------------------------------
+    // GET ORGANISER EVENT ENROLMENTS
+    // ---------------------------------------------------------
+
+    public async Task<List<EventEnrolmentViewModel>>
+        GetEventEnrolmentsAsync(int eventId)
+    {
+        using HttpResponseMessage response =
+            await SendAsync(
+                HttpMethod.Get,
+                $"api/enrolments/event/{eventId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Unable to retrieve event enrolments. " +
+                $"API returned {(int)response.StatusCode} " +
+                $"{response.StatusCode}.");
+        }
+
+        List<EventEnrolmentViewModel>? enrolments =
+            await ReadAsync<List<EventEnrolmentViewModel>>(
+                response);
+
+        return enrolments ??
+               new List<EventEnrolmentViewModel>();
+    }
+
 }

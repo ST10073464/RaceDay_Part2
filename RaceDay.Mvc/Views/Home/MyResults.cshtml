@@ -1,0 +1,112 @@
+﻿@model List<RaceDay.Mvc.Models.ResultViewModel>
+
+@{
+    ViewData["Title"] = "My Results";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between
+        align-items-center mb-4">
+
+        <div>
+            <h1 class="fw-bold">
+                My Results
+            </h1>
+
+            <p class="text-muted mb-0">
+                View your published RaceDay results.
+            </p>
+        </div>
+
+        <a asp-controller="Home"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            Back to Dashboard
+        </a>
+
+    </div>
+
+
+    @if (ViewBag.ResultsError != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.ResultsError
+        </div>
+    }
+
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card shadow-sm">
+
+            <div class="card-body text-center py-5">
+
+                <h5>
+                    No Results Yet
+                </h5>
+
+                <p class="text-muted mb-0">
+                    Your published RaceDay results
+                    will appear here.
+                </p>
+
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+
+            @foreach (var result in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+
+                    <div class="card h-100 shadow-sm">
+
+                        <div class="card-body">
+
+                            <h5 class="card-title fw-bold">
+                                @result.EventName
+                            </h5>
+
+                            <p class="text-muted mb-3">
+                                @result.CategoryName
+                            </p>
+
+                            <hr />
+
+                            <p class="mb-2">
+
+                                <strong>
+                                    Finish Time:
+                                </strong>
+
+                                @result.FinishTime.ToString(
+                                    @"hh\:mm\:ss")
+
+                            </p>
+
+                            <p class="mb-0">
+
+                                <strong>
+                                    Published:
+                                </strong>
+
+                                @result.PublishedAt.ToString(
+                                    "dd MMM yyyy HH:mm")
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
