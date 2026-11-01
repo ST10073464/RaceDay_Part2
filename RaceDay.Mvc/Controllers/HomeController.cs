@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using RaceDay.Mvc.Models;
 using RaceDay.Mvc.Services;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace RaceDay.Mvc.Controllers
 {
@@ -97,7 +98,12 @@ namespace RaceDay.Mvc.Controllers
 
                 EnrolmentViewModel? existingEnrolment =
                     enrolments.FirstOrDefault(
-                        e => e.EventId == id);
+                        e =>
+                            e.EventId == id &&
+                            !string.Equals(
+                                e.EnrolmentStatus,
+                                "Cancelled",
+                                StringComparison.OrdinalIgnoreCase));
 
                 var model =
                     new EventDetailsViewModel
@@ -164,16 +170,48 @@ namespace RaceDay.Mvc.Controllers
                         new { id = eventId });
                 }
 
-                string errorMessage =
-                    await response.Content.ReadAsStringAsync();
+                string errorContent =
+    await response.Content.ReadAsStringAsync();
 
-                if (string.IsNullOrWhiteSpace(errorMessage))
+                string errorMessage;
+
+                if (!string.IsNullOrWhiteSpace(errorContent))
+                {
+                    try
+                    {
+                        using JsonDocument jsonDocument =
+                            JsonDocument.Parse(errorContent);
+
+                        if (jsonDocument.RootElement.TryGetProperty(
+                            "message",
+                            out JsonElement messageElement))
+                        {
+                            errorMessage =
+                                messageElement.GetString()
+                                ?? "Unable to complete the enrolment.";
+                        }
+                        else
+                        {
+                            errorMessage =
+                                "Unable to complete the enrolment.";
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        errorMessage =
+                            "Unable to complete the enrolment.";
+                    }
+                }
+                else
                 {
                     errorMessage =
-                        $"Enrolment failed: {(int)response.StatusCode} {response.StatusCode}";
+                        $"Enrolment failed: " +
+                        $"{(int)response.StatusCode} " +
+                        $"{response.StatusCode}.";
                 }
 
-                TempData["ErrorMessage"] = errorMessage;
+                TempData["ErrorMessage"] =
+                    errorMessage;
 
                 return RedirectToAction(
                     nameof(EventDetails),
@@ -232,6 +270,74 @@ namespace RaceDay.Mvc.Controllers
                     "Your enrolments could not be loaded at this time.";
 
                 return View(new List<EnrolmentViewModel>());
+            }
+        }
+
+        // ------------------------------------------------------------
+        // CANCEL ENROLMENT
+        // ------------------------------------------------------------
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelEnrolment(
+            int enrolmentId)
+        {
+            var role =
+                HttpContext.Session.GetString("Role");
+
+            // Only logged-in participants may cancel enrolments.
+            if (!string.Equals(
+                role,
+                "Participant",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account");
+            }
+
+            try
+            {
+                using HttpResponseMessage response =
+                    await _apiClient.CancelEnrolmentAsync(
+                        enrolmentId);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["EnrolmentSuccess"] =
+                        "Your enrolment has been cancelled successfully.";
+
+                    return RedirectToAction(
+                        nameof(MyEnrolments));
+                }
+
+                string errorMessage =
+                    await response.Content.ReadAsStringAsync();
+
+                _logger.LogWarning(
+                    "Unable to cancel enrolment {EnrolmentId}. " +
+                    "API response: {ApiResponse}",
+                    enrolmentId,
+                    errorMessage);
+
+                TempData["EnrolmentError"] =
+                    "The enrolment could not be cancelled.";
+
+                return RedirectToAction(
+                    nameof(MyEnrolments));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to cancel enrolment {EnrolmentId}.",
+                    enrolmentId);
+
+                TempData["EnrolmentError"] =
+                    "The enrolment could not be cancelled at this time.";
+
+                return RedirectToAction(
+                    nameof(MyEnrolments));
             }
         }
 

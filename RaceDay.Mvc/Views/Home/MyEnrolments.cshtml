@@ -18,7 +18,7 @@
         <div>
             <h2 class="mb-1">My Enrolments</h2>
             <p class="text-muted mb-0">
-                View the RaceDay events you have enrolled in.
+                View and manage the RaceDay events you have enrolled in.
             </p>
         </div>
     </div>
@@ -27,7 +27,38 @@
     {
         <div class="alert alert-success alert-dismissible fade show"
              role="alert">
+
             @TempData["SuccessMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (TempData["EnrolmentSuccess"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            @TempData["EnrolmentSuccess"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (TempData["EnrolmentError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            @TempData["EnrolmentError"]
 
             <button type="button"
                     class="btn-close"
@@ -110,12 +141,40 @@
                                 }
                             </p>
 
-                            <a asp-controller="Home"
-                               asp-action="EventDetails"
-                               asp-route-id="@enrolment.EventId"
-                               class="btn btn-outline-primary w-100">
-                                View Event
-                            </a>
+                            <div class="d-grid gap-2">
+
+                                <a asp-controller="Home"
+                                   asp-action="EventDetails"
+                                   asp-route-id="@enrolment.EventId"
+                                   class="btn btn-outline-primary">
+                                    View Event
+                                </a>
+
+                                @if (!string.Equals(
+                                    enrolment.EnrolmentStatus,
+                                    "Cancelled",
+                                    StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <form asp-controller="Home"
+                                          asp-action="CancelEnrolment"
+                                          method="post"
+                                          onsubmit="return confirm('Are you sure you want to cancel your enrolment for @enrolment.EventName?');">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="enrolmentId"
+                                               value="@enrolment.EnrolmentId" />
+
+                                        <button type="submit"
+                                                class="btn btn-outline-danger w-100">
+                                            Cancel Enrolment
+                                        </button>
+
+                                    </form>
+                                }
+
+                            </div>
 
                         </div>
 

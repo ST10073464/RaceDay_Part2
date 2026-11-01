@@ -206,6 +206,18 @@ public class RaceDayApiClient
         return enrolments ?? new List<EnrolmentViewModel>();
     }
 
+    // ------------------------------------------------------------
+    // CANCEL PARTICIPANT ENROLMENT
+    // ------------------------------------------------------------
+
+    public async Task<HttpResponseMessage> CancelEnrolmentAsync(
+        int enrolmentId)
+    {
+        return await SendAsync(
+            HttpMethod.Delete,
+            $"api/enrolments/{enrolmentId}");
+    }
+
     public async Task<EventViewModel?> GetEventByIdAsync(
     int eventId)
     {

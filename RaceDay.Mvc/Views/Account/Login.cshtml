@@ -11,7 +11,9 @@
             <div class="card shadow">
                 <div class="card-body p-4">
 
-                    <h2 class="text-center mb-2">RaceDay Login</h2>
+                    <h2 class="text-center mb-2">
+                        RaceDay Login
+                    </h2>
 
                     <p class="text-center text-muted mb-4">
                         Sign in to access your RaceDay account.
@@ -19,7 +21,8 @@
 
                     @if (TempData["SuccessMessage"] != null)
                     {
-                        <div class="alert alert-success" role="alert">
+                        <div class="alert alert-success"
+                             role="alert">
                             @TempData["SuccessMessage"]
                         </div>
                     }
@@ -35,6 +38,7 @@
                         </div>
 
                         <div class="mb-3">
+
                             <label asp-for="Email"
                                    class="form-label">
                                 Email Address
@@ -48,9 +52,11 @@
                             <span asp-validation-for="Email"
                                   class="text-danger">
                             </span>
+
                         </div>
 
                         <div class="mb-4">
+
                             <label asp-for="Password"
                                    class="form-label">
                                 Password
@@ -59,19 +65,36 @@
                             <input asp-for="Password"
                                    type="password"
                                    class="form-control"
+                                   id="Password"
                                    placeholder="Enter your password"
                                    autocomplete="current-password" />
+
+                            <div class="form-check mt-2">
+
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="showLoginPassword" />
+
+                                <label class="form-check-label"
+                                       for="showLoginPassword">
+                                    Show password
+                                </label>
+
+                            </div>
 
                             <span asp-validation-for="Password"
                                   class="text-danger">
                             </span>
+
                         </div>
 
                         <div class="d-grid">
+
                             <button type="submit"
                                     class="btn btn-primary btn-lg">
                                 Login
                             </button>
+
                         </div>
 
                     </form>
@@ -80,6 +103,7 @@
 
                     <p class="text-center mb-0">
                         Don't have an account?
+
                         <a asp-controller="Account"
                            asp-action="Register">
                             Create an account
@@ -93,8 +117,38 @@
     </div>
 </div>
 
-@section Scripts {
+@section Scripts
+{
     @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        await Html.RenderPartialAsync(
+            "_ValidationScriptsPartial");
     }
+
+    <script>
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                const passwordInput =
+                    document.getElementById("Password");
+
+                const showPasswordCheckbox =
+                    document.getElementById(
+                        "showLoginPassword");
+
+                if (passwordInput &&
+                    showPasswordCheckbox) {
+
+                    showPasswordCheckbox.addEventListener(
+                        "change",
+                        function () {
+
+                            passwordInput.type =
+                                this.checked
+                                    ? "text"
+                                    : "password";
+                        });
+                }
+            });
+    </script>
 }

@@ -6,6 +6,37 @@
 
 <div class="container mt-4">
 
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            @TempData["SuccessMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            <strong>Unable to enrol.</strong>
+            @TempData["ErrorMessage"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
     <div class="mb-4">
         <a asp-controller="Home"
            asp-action="Index"
@@ -17,18 +48,23 @@
     <div class="card shadow-sm">
 
         <div class="card-header">
-            <h2 class="mb-0">@Model.Event.EventName</h2>
+            <h2 class="mb-0">
+                @Model.Event.EventName
+            </h2>
         </div>
 
         <div class="card-body">
 
-            @if (!string.IsNullOrWhiteSpace(Model.Event.BannerImageUrl))
+            @if (!string.IsNullOrWhiteSpace(
+                Model.Event.BannerImageUrl))
             {
                 <div class="mb-4">
+
                     <img src="@Model.Event.BannerImageUrl"
                          alt="@Model.Event.EventName banner"
                          class="img-fluid rounded border w-100"
                          style="max-height: 350px; object-fit: cover;" />
+
                 </div>
             }
 
@@ -50,7 +86,10 @@
 
                 <div class="col-md-6 mb-3">
                     <strong>Date</strong>
-                    <p>@Model.Event.EventDate.ToString("dd MMMM yyyy")</p>
+                    <p>
+                        @Model.Event.EventDate.ToString(
+                            "dd MMMM yyyy")
+                    </p>
                 </div>
 
                 <div class="col-md-6 mb-3">
@@ -60,7 +99,9 @@
 
                 <div class="col-md-6 mb-3">
                     <strong>Distance</strong>
-                    <p>@Model.Event.DistanceKm.ToString("0.00") km</p>
+                    <p>
+                        @Model.Event.DistanceKm.ToString("0.00") km
+                    </p>
                 </div>
 
                 <div class="col-md-6 mb-3">
@@ -72,9 +113,12 @@
 
             <hr />
 
-            <h4 class="mb-3">Available Categories</h4>
+            <h4 class="mb-3">
+                Available Categories
+            </h4>
 
-            @if (Model.Categories != null && Model.Categories.Any())
+            @if (Model.Categories != null &&
+                 Model.Categories.Any())
             {
                 <div class="row">
 
@@ -84,7 +128,7 @@
 
                             <div class="card h-100">
 
-                                <div class="card-body">
+                                <div class="card-body d-flex flex-column">
 
                                     <h5 class="card-title">
                                         @category.CategoryName
@@ -92,7 +136,7 @@
 
                                     <p class="mb-2">
                                         <strong>Distance:</strong>
-                                        @category.DistanceKm km
+                                        @category.DistanceKm.ToString("0.00") km
                                     </p>
 
                                     <p class="mb-2">
@@ -105,50 +149,53 @@
                                         @category.MaxAge
                                     </p>
 
-                                    @if (Model.ExistingEnrolment != null)
-                                    {
-                                        if (Model.ExistingEnrolment.CategoryId == category.CategoryId)
+                                    <div class="mt-auto">
+
+                                        @if (Model.ExistingEnrolment != null)
                                         {
-                                            <button type="button"
-                                                    class="btn btn-success w-100"
-                                                    disabled>
-                                                ✓ Enrolled
-                                            </button>
+                                            if (Model.ExistingEnrolment.CategoryId ==
+                                                category.CategoryId)
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-success w-100"
+                                                        disabled>
+                                                    ✓ Enrolled
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-secondary w-100"
+                                                        disabled>
+                                                    Already Enrolled in this Event
+                                                </button>
+                                            }
                                         }
                                         else
                                         {
-                                            <button type="button"
-                                                    class="btn btn-secondary w-100"
-                                                    disabled>
-                                                Already Enrolled in this Event
-                                            </button>
+                                            <form asp-controller="Home"
+                                                  asp-action="Enrol"
+                                                  method="post">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden"
+                                                       name="eventId"
+                                                       value="@Model.Event.EventId" />
+
+                                                <input type="hidden"
+                                                       name="categoryId"
+                                                       value="@category.CategoryId" />
+
+                                                <button type="submit"
+                                                        class="btn btn-primary w-100">
+                                                    Enrol
+                                                </button>
+
+                                            </form>
                                         }
-                                    }
-                                    else
-                                    {
-                                        <form asp-controller="Home"
-                                              asp-action="Enrol"
-                                              method="post">
 
-                                            @Html.AntiForgeryToken()
-
-                                            <input type="hidden"
-                                                   name="EventId"
-                                                   value="@Model.Event.EventId" />
-
-                                            <input type="hidden"
-                                                   name="CategoryId"
-                                                   value="@category.CategoryId" />
-
-                                            <button type="submit"
-                                                    class="btn btn-primary w-100">
-                                                Enrol
-                                            </button>
-
-                                        </form>
-                                    }
-
-                                    
+                                    </div>
 
                                 </div>
 

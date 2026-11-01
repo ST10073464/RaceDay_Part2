@@ -34,6 +34,53 @@ public class AuthController : ControllerBase
     {
         string email = request.Email.Trim().ToLowerInvariant();
 
+        // ---------------------------------------------------------
+        // VALIDATE PARTICIPANT AGE
+        // ---------------------------------------------------------
+
+        if (!request.DateOfBirth.HasValue)
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Date of birth is required to create a RaceDay account."
+            });
+        }
+
+        DateOnly today =
+            DateOnly.FromDateTime(DateTime.Today);
+
+        DateOnly dateOfBirth =
+            request.DateOfBirth.Value;
+
+        // Date of birth cannot be in the future.
+        if (dateOfBirth > today)
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Date of birth cannot be in the future."
+            });
+        }
+
+        int age =
+            today.Year - dateOfBirth.Year;
+
+        if (today < dateOfBirth.AddYears(age))
+        {
+            age--;
+        }
+
+        if (age < 16)
+        {
+            return BadRequest(new
+            {
+                message =
+                    "You must be at least 16 years old " +
+                    "to create a RaceDay account."
+            });
+        }
+
         bool emailExists = await _context.Users
             .AnyAsync(u => u.Email.ToLower() == email);
 

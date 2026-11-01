@@ -8,13 +8,16 @@
     string? userRole =
         HttpContextAccessor.HttpContext?.Session.GetString("Role");
 
-    bool isLoggedIn = !string.IsNullOrWhiteSpace(userEmail);
+    bool isLoggedIn =
+        !string.IsNullOrWhiteSpace(userEmail);
 }
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
 
@@ -74,10 +77,10 @@
                         </li>
 
                         @if (isLoggedIn &&
-                         string.Equals(
-                             userRole,
-                             "Participant",
-                             StringComparison.OrdinalIgnoreCase))
+                             string.Equals(
+                                 userRole,
+                                 "Participant",
+                                 StringComparison.OrdinalIgnoreCase))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark"
@@ -94,14 +97,13 @@
                                     My Profile
                                 </a>
                             </li>
-
                         }
 
                         @if (isLoggedIn &&
-                            string.Equals(
-                                userRole,
-                                "Organiser",
-                                StringComparison.OrdinalIgnoreCase))
+                             string.Equals(
+                                 userRole,
+                                 "Organiser",
+                                 StringComparison.OrdinalIgnoreCase))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark"
@@ -127,7 +129,7 @@
                                 </a>
                             </li>
                         }
-                        
+
                         @if (!isLoggedIn)
                         {
                             <li class="nav-item">
@@ -167,6 +169,7 @@
                             </li>
 
                             <li class="nav-item">
+
                                 <form asp-controller="Account"
                                       asp-action="Logout"
                                       method="post"
@@ -180,6 +183,7 @@
                                     </button>
 
                                 </form>
+
                             </li>
                         }
 

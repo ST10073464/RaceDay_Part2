@@ -22,18 +22,30 @@ namespace RaceDay.Api.Controllers
         // Participants enrol themselves into an event/category.
         [HttpPost]
         [Authorize(Roles = "Participant")]
-        public async Task<IActionResult> CreateEnrolment(Enrolment enrolment)
+        public async Task<IActionResult> CreateEnrolment(
+            Enrolment enrolment)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim =
+                User.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
 
-            if (!int.TryParse(userIdClaim, out var participantId))
+            if (!int.TryParse(
+                userIdClaim,
+                out var participantId))
             {
                 return Unauthorized();
             }
 
-            var existingEvent = await _context.Events
-                .AsNoTracking()
-                .FirstOrDefaultAsync(e => e.EventId == enrolment.EventId);
+            // -------------------------------------------------
+            // VALIDATE EVENT
+            // -------------------------------------------------
+
+            var existingEvent =
+                await _context.Events
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        e => e.EventId ==
+                             enrolment.EventId);
 
             if (existingEvent == null)
             {
@@ -43,9 +55,30 @@ namespace RaceDay.Api.Controllers
                 });
             }
 
-            var category = await _context.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.CategoryId == enrolment.CategoryId);
+            DateOnly today =
+                DateOnly.FromDateTime(
+                    DateTime.Today);
+
+            if (existingEvent.EventDate < today)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "You cannot enrol in an event " +
+                        "that has already taken place."
+                });
+            }
+
+            // -------------------------------------------------
+            // VALIDATE CATEGORY
+            // -------------------------------------------------
+
+            var category =
+                await _context.Categories
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        c => c.CategoryId ==
+                             enrolment.CategoryId);
 
             if (category == null)
             {
@@ -55,27 +88,140 @@ namespace RaceDay.Api.Controllers
                 });
             }
 
-            // The selected category must belong to the selected event.
             if (category.EventId != enrolment.EventId)
             {
                 return BadRequest(new
                 {
-                    message = "The selected category does not belong to this event."
+                    message =
+                        "The selected category does not " +
+                        "belong to this event."
                 });
             }
 
-            var alreadyEnrolled = await _context.Enrolments
-                .AnyAsync(e =>
-                    e.ParticipantId == participantId &&
-                    e.EventId == enrolment.EventId);
+            // -------------------------------------------------
+            // VALIDATE PARTICIPANT PROFILE
+            // -------------------------------------------------
 
-            if (alreadyEnrolled)
+            var participant =
+                await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        u => u.UserId == participantId);
+
+            if (participant == null)
             {
+                return NotFound(new
+                {
+                    message =
+                        "Participant profile could not be found."
+                });
+            }
+
+            if (!participant.DateOfBirth.HasValue)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "Please add your date of birth to " +
+                        "your profile before enrolling in " +
+                        "an event."
+                });
+            }
+
+            // -------------------------------------------------
+            // CALCULATE AGE ON EVENT DATE
+            // -------------------------------------------------
+
+            DateOnly dateOfBirth =
+                participant.DateOfBirth.Value;
+
+            DateOnly eventDate =
+                existingEvent.EventDate;
+
+            int age =
+                eventDate.Year -
+                dateOfBirth.Year;
+
+            if (eventDate <
+                dateOfBirth.AddYears(age))
+            {
+                age--;
+            }
+
+            // -------------------------------------------------
+            // VALIDATE CATEGORY AGE
+            // -------------------------------------------------
+
+            if (age < category.MinAge ||
+                age > category.MaxAge)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        $"You must be between " +
+                        $"{category.MinAge} and " +
+                        $"{category.MaxAge} years old " +
+                        $"on the event date to enrol in " +
+                        $"{category.CategoryName}. " +
+                        $"Your age on the event date " +
+                        $"will be {age}."
+                });
+            }
+
+            // -------------------------------------------------
+            // CHECK EXISTING ENROLMENT
+            // -------------------------------------------------
+
+            var existingEnrolment =
+                await _context.Enrolments
+                    .FirstOrDefaultAsync(
+                        e =>
+                            e.ParticipantId == participantId &&
+                            e.EventId == enrolment.EventId);
+
+            if (existingEnrolment != null)
+            {
+                // A cancelled enrolment may be reactivated.
+                if (string.Equals(
+                    existingEnrolment.EnrolmentStatus,
+                    "Cancelled",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    existingEnrolment.CategoryId =
+                        enrolment.CategoryId;
+
+                    existingEnrolment.EnrolmentDate =
+                        DateTime.UtcNow;
+
+                    existingEnrolment.EnrolmentStatus =
+                        "Confirmed";
+
+                    await _context.SaveChangesAsync();
+
+                    return Ok(new
+                    {
+                        message =
+                            "You have successfully re-enrolled in this event.",
+
+                        existingEnrolment.EnrolmentId,
+                        existingEnrolment.ParticipantId,
+                        existingEnrolment.EventId,
+                        existingEnrolment.CategoryId,
+                        existingEnrolment.EnrolmentDate,
+                        existingEnrolment.EnrolmentStatus
+                    });
+                }
+
                 return Conflict(new
                 {
-                    message = "You are already enrolled in this event."
+                    message =
+                        "You are already enrolled in this event."
                 });
             }
+
+            // -------------------------------------------------
+            // CREATE ENROLMENT
+            // -------------------------------------------------
 
             enrolment.EnrolmentId = 0;
             enrolment.ParticipantId = participantId;
@@ -83,6 +229,7 @@ namespace RaceDay.Api.Controllers
             enrolment.EnrolmentStatus = "Confirmed";
 
             _context.Enrolments.Add(enrolment);
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
@@ -218,5 +365,7 @@ namespace RaceDay.Api.Controllers
 
             return NoContent();
         }
+
     }
+
 }
