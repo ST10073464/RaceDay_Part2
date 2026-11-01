@@ -8,5 +8,7 @@
 
         public EnrolmentViewModel? ExistingEnrolment { get; set; }
 
+        // Participant's age calculated on the event date.
+        public int? ParticipantAgeOnEventDate { get; set; }
     }
 }

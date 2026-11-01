@@ -82,6 +82,10 @@ namespace RaceDay.Mvc.Controllers
 
             try
             {
+                // ---------------------------------------------------------
+                // LOAD EVENT
+                // ---------------------------------------------------------
+
                 EventViewModel? raceEvent =
                     await _apiClient.GetEventAsync(id);
 
@@ -90,8 +94,16 @@ namespace RaceDay.Mvc.Controllers
                     return NotFound();
                 }
 
+                // ---------------------------------------------------------
+                // LOAD EVENT CATEGORIES
+                // ---------------------------------------------------------
+
                 List<CategoryViewModel> categories =
                     await _apiClient.GetEventCategoriesAsync(id);
+
+                // ---------------------------------------------------------
+                // LOAD PARTICIPANT ENROLMENTS
+                // ---------------------------------------------------------
 
                 List<EnrolmentViewModel> enrolments =
                     await _apiClient.GetMyEnrolmentsAsync();
@@ -105,12 +117,52 @@ namespace RaceDay.Mvc.Controllers
                                 "Cancelled",
                                 StringComparison.OrdinalIgnoreCase));
 
+                // ---------------------------------------------------------
+                // LOAD PARTICIPANT PROFILE
+                // ---------------------------------------------------------
+
+                ProfileViewModel? profile =
+                    await _apiClient.GetProfileAsync();
+
+                int? participantAgeOnEventDate = null;
+
+                // ---------------------------------------------------------
+                // CALCULATE AGE ON EVENT DATE
+                // ---------------------------------------------------------
+
+                if (profile?.DateOfBirth != null)
+                {
+                    DateOnly dateOfBirth =
+                        profile.DateOfBirth.Value;
+
+                    DateOnly eventDate =
+                        raceEvent.EventDate;
+
+                    int age =
+                        eventDate.Year - dateOfBirth.Year;
+
+                    if (eventDate <
+                        dateOfBirth.AddYears(age))
+                    {
+                        age--;
+                    }
+
+                    participantAgeOnEventDate =
+                        age;
+                }
+
+                // ---------------------------------------------------------
+                // BUILD EVENT DETAILS VIEW MODEL
+                // ---------------------------------------------------------
+
                 var model =
                     new EventDetailsViewModel
                     {
                         Event = raceEvent,
                         Categories = categories,
-                        ExistingEnrolment = existingEnrolment
+                        ExistingEnrolment = existingEnrolment,
+                        ParticipantAgeOnEventDate =
+                            participantAgeOnEventDate
                     };
 
                 return View(model);
@@ -122,10 +174,10 @@ namespace RaceDay.Mvc.Controllers
                     "Unable to load event {EventId}.",
                     id);
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(
+                    nameof(Index));
             }
         }
-
         // ------------------------------------------------------------
         // PARTICIPANT ENROLMENT
         // ------------------------------------------------------------
