@@ -19,17 +19,10 @@
                         Sign in to access your RaceDay account.
                     </p>
 
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success"
-                             role="alert">
-                            @TempData["SuccessMessage"]
-                        </div>
-                    }
-
                     <form asp-controller="Account"
                           asp-action="Login"
-                          method="post">
+                          method="post"
+                          autocomplete="off">
 
                         @Html.AntiForgeryToken()
 
@@ -45,9 +38,12 @@
                             </label>
 
                             <input asp-for="Email"
+                                   type="email"
                                    class="form-control"
-                                   placeholder="name@example.com"
-                                   autocomplete="email" />
+                                   id="Email"
+                                   placeholder="Enter your email address"
+                                   autocomplete="username"
+                                   value="" />
 
                             <span asp-validation-for="Email"
                                   class="text-danger">
@@ -67,7 +63,8 @@
                                    class="form-control"
                                    id="Password"
                                    placeholder="Enter your password"
-                                   autocomplete="current-password" />
+                                   autocomplete="current-password"
+                                   value="" />
 
                             <div class="form-check mt-2">
 
@@ -129,6 +126,9 @@
             "DOMContentLoaded",
             function () {
 
+                const emailInput =
+                    document.getElementById("Email");
+
                 const passwordInput =
                     document.getElementById("Password");
 
@@ -136,6 +136,31 @@
                     document.getElementById(
                         "showLoginPassword");
 
+                function clearLoginForm() {
+
+                    if (emailInput) {
+                        emailInput.value = "";
+                    }
+
+                    if (passwordInput) {
+                        passwordInput.value = "";
+                        passwordInput.type = "password";
+                    }
+
+                    if (showPasswordCheckbox) {
+                        showPasswordCheckbox.checked = false;
+                    }
+                }
+
+                // Always start Login with empty fields.
+                clearLoginForm();
+
+                // Clear delayed browser autofill once.
+                window.setTimeout(
+                    clearLoginForm,
+                    300);
+
+                // Show / hide password.
                 if (passwordInput &&
                     showPasswordCheckbox) {
 

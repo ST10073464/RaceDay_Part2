@@ -21,7 +21,8 @@
 
                     <form asp-controller="Account"
                           asp-action="Register"
-                          method="post">
+                          method="post"
+                          autocomplete="off">
 
                         @Html.AntiForgeryToken()
 
@@ -32,6 +33,7 @@
                         <div class="row">
 
                             <div class="col-md-6 mb-3">
+
                                 <label asp-for="FirstName"
                                        class="form-label">
                                     First Name
@@ -39,14 +41,19 @@
 
                                 <input asp-for="FirstName"
                                        class="form-control"
-                                       placeholder="Enter your first name" />
+                                       id="FirstName"
+                                       placeholder="Enter your first name"
+                                       autocomplete="off"
+                                       value="" />
 
                                 <span asp-validation-for="FirstName"
                                       class="text-danger">
                                 </span>
+
                             </div>
 
                             <div class="col-md-6 mb-3">
+
                                 <label asp-for="LastName"
                                        class="form-label">
                                     Last Name
@@ -54,31 +61,42 @@
 
                                 <input asp-for="LastName"
                                        class="form-control"
-                                       placeholder="Enter your last name" />
+                                       id="LastName"
+                                       placeholder="Enter your last name"
+                                       autocomplete="off"
+                                       value="" />
 
                                 <span asp-validation-for="LastName"
                                       class="text-danger">
                                 </span>
+
                             </div>
 
                         </div>
 
                         <div class="mb-3">
+
                             <label asp-for="Email"
                                    class="form-label">
                                 Email Address
                             </label>
 
                             <input asp-for="Email"
+                                   type="email"
                                    class="form-control"
-                                   placeholder="name@example.com" />
+                                   id="Email"
+                                   placeholder="Enter your email address"
+                                   autocomplete="off"
+                                   value="" />
 
                             <span asp-validation-for="Email"
                                   class="text-danger">
                             </span>
+
                         </div>
 
                         <div class="mb-3">
+
                             <label asp-for="Password"
                                    class="form-label">
                                 Password
@@ -88,9 +106,12 @@
                                    type="password"
                                    class="form-control"
                                    id="Password"
-                                   placeholder="Minimum 8 characters" />
+                                   placeholder="Minimum 8 characters"
+                                   autocomplete="new-password"
+                                   value="" />
 
                             <div class="form-check mt-2">
+
                                 <input class="form-check-input"
                                        type="checkbox"
                                        id="showRegisterPassword" />
@@ -99,6 +120,7 @@
                                        for="showRegisterPassword">
                                     Show password
                                 </label>
+
                             </div>
 
                             <span asp-validation-for="Password"
@@ -108,9 +130,11 @@
                             <div class="form-text">
                                 Password must contain at least 8 characters.
                             </div>
+
                         </div>
 
                         <div class="mb-3">
+
                             <label asp-for="PhoneNumber"
                                    class="form-label">
                                 Phone Number
@@ -119,14 +143,19 @@
                             <input asp-for="PhoneNumber"
                                    type="tel"
                                    class="form-control"
-                                   placeholder="Enter your phone number" />
+                                   id="PhoneNumber"
+                                   placeholder="Enter your phone number"
+                                   autocomplete="off"
+                                   value="" />
 
                             <span asp-validation-for="PhoneNumber"
                                   class="text-danger">
                             </span>
+
                         </div>
 
                         <div class="mb-4">
+
                             <label asp-for="DateOfBirth"
                                    class="form-label">
                                 Date of Birth
@@ -134,7 +163,10 @@
 
                             <input asp-for="DateOfBirth"
                                    type="date"
-                                   class="form-control" />
+                                   class="form-control"
+                                   id="DateOfBirth"
+                                   autocomplete="off"
+                                   value="" />
 
                             <span asp-validation-for="DateOfBirth"
                                   class="text-danger">
@@ -144,13 +176,16 @@
                                 You must be at least 16 years old
                                 to create a RaceDay account.
                             </div>
+
                         </div>
 
                         <div class="d-grid">
+
                             <button type="submit"
                                     class="btn btn-primary btn-lg">
                                 Create Account
                             </button>
+
                         </div>
 
                     </form>
@@ -185,13 +220,69 @@
             "DOMContentLoaded",
             function () {
 
+                const firstNameInput =
+                    document.getElementById("FirstName");
+
+                const lastNameInput =
+                    document.getElementById("LastName");
+
+                const emailInput =
+                    document.getElementById("Email");
+
                 const passwordInput =
                     document.getElementById("Password");
+
+                const phoneInput =
+                    document.getElementById("PhoneNumber");
+
+                const dateOfBirthInput =
+                    document.getElementById("DateOfBirth");
 
                 const showPasswordCheckbox =
                     document.getElementById(
                         "showRegisterPassword");
 
+                function clearRegistrationForm() {
+
+                    if (firstNameInput) {
+                        firstNameInput.value = "";
+                    }
+
+                    if (lastNameInput) {
+                        lastNameInput.value = "";
+                    }
+
+                    if (emailInput) {
+                        emailInput.value = "";
+                    }
+
+                    if (passwordInput) {
+                        passwordInput.value = "";
+                        passwordInput.type = "password";
+                    }
+
+                    if (phoneInput) {
+                        phoneInput.value = "";
+                    }
+
+                    if (dateOfBirthInput) {
+                        dateOfBirthInput.value = "";
+                    }
+
+                    if (showPasswordCheckbox) {
+                        showPasswordCheckbox.checked = false;
+                    }
+                }
+
+                // Always start Register with empty fields.
+                clearRegistrationForm();
+
+                // Clear delayed browser autofill once.
+                window.setTimeout(
+                    clearRegistrationForm,
+                    300);
+
+                // Show / hide password.
                 if (passwordInput &&
                     showPasswordCheckbox) {
 
