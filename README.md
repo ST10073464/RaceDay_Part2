@@ -543,21 +543,22 @@ https://youtu.be/DIlPPcNDX2s
 
 ---
 
-## Part 3 Video Demonstration
+## Part 3 POE Demonstration Video
 
-The final Part 3 demonstration will cover:
+The final RaceDay POE demonstration covers the complete system, including:
 
-- ASP.NET Core MVC structure
-- Participant functionality
-- Organiser functionality
-- RaceDay.API integration
-- Azure Blob Storage
-- Docker setup and execution
+- ASP.NET Core MVC and REST API architecture
+- SQL Server database and password hashing
+- Participant and Organiser functionality
+- Age-based event category eligibility
+- Event enrolment and results management
+- Microsoft Azure Blob Storage integration
+- Docker containerisation
+- Swagger API documentation
 - Automated testing
+- Git and GitHub Actions CI/CD
 
-YouTube link:
-
-`To be added after the final Part 3 demonstration is recorded.`
+Final POE Video: https://youtu.be/zJRaywby-S4
 
 ---
 
