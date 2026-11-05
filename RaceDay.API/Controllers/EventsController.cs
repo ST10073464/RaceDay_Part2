@@ -203,7 +203,8 @@ public class EventsController : ControllerBase
         existingEvent.Location = updatedEvent.Location.Trim();
         existingEvent.DistanceKm = updatedEvent.DistanceKm;
         existingEvent.EventType = updatedEvent.EventType;
-        existingEvent.BannerImageUrl = updatedEvent.BannerImageUrl;
+        // Banner changes are handled by dedicated banner endpoints.
+        // Never persist a temporary SAS read URL from the edit form.
 
         await _context.SaveChangesAsync();
 
@@ -314,6 +315,39 @@ public class EventsController : ControllerBase
                 newEvent.EventType,
                 newEvent.OrganiserId
             });
+    }
+
+    // PUT: api/events/{id}/banner-url
+    // Change only the banner, leaving event details untouched.
+    [HttpPut("{id:int}/banner-url")]
+    [Authorize(Roles = "Organiser")]
+    public async Task<IActionResult> UpdateEventBannerUrl(int id, [FromBody] BannerUrlRequest request)
+    {
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out int organiserId)) return Unauthorized();
+
+        var existingEvent = await _context.Events.FirstOrDefaultAsync(e => e.EventId == id);
+        if (existingEvent == null) return NotFound(new { message = "Event not found." });
+        if (existingEvent.OrganiserId != organiserId) return Forbid();
+
+        string? value = request?.BannerImageUrl?.Trim();
+        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) ||
+            uri.Scheme != Uri.UriSchemeHttps || !string.IsNullOrEmpty(uri.UserInfo))
+            return BadRequest(new { message = "Enter a valid HTTPS image URL." });
+
+        string? oldBanner = existingEvent.BannerImageUrl;
+        existingEvent.BannerImageUrl = uri.ToString();
+        await _context.SaveChangesAsync();
+
+        // The storage service refuses to delete URLs outside our Azure container.
+        if (!string.IsNullOrWhiteSpace(oldBanner) &&
+            !string.Equals(oldBanner, existingEvent.BannerImageUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            try { await _blobStorageService.DeleteImageAsync(oldBanner); }
+            catch { /* Cleanup failure must not undo a successful banner update. */ }
+        }
+
+        return Ok(new { message = "Event banner updated successfully." });
     }
 
     // POST: api/events/{id}/banner
@@ -488,4 +522,10 @@ public class EventsController : ControllerBase
                 });
         }
     }
+}
+
+// Request contract for replacing a banner with an external URL.
+public sealed class BannerUrlRequest
+{
+    public string? BannerImageUrl { get; set; }
 }

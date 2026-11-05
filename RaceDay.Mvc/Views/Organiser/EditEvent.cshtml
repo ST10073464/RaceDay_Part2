@@ -10,7 +10,7 @@
         <div class="col-lg-8">
 
             <div class="d-flex justify-content-between
-                        align-items-center mb-4">
+                align-items-center mb-4">
 
                 <div>
                     <h1 class="fw-bold">Edit Event</h1>
@@ -255,198 +255,67 @@
 
                     <hr class="my-4" />
 
+                    <h5 class="fw-bold">Event Banner</h5>
+                    <p class="text-muted">Replace the banner using a URL or a file upload, or remove the existing banner.</p>
+
                     @if (!string.IsNullOrWhiteSpace(Model.BannerImageUrl))
                     {
-                        <div class="mb-2">
-
-                            <h5 class="fw-bold">
-                                Event Banner
-                            </h5>
-
-                            <p class="text-muted">
-                                A banner is already uploaded for this event.
-                            </p>
-
-                            <!-- MANAGE BANNER BUTTON -->
-
-                            <button type="button"
-                                    class="btn btn-outline-success"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#bannerOptions"
-                                    aria-expanded="false"
-                                    aria-controls="bannerOptions">
+                        <div class="d-flex gap-2 mb-3">
+                            <button type="button" class="btn btn-outline-success"
+                                    data-bs-toggle="collapse" data-bs-target="#bannerEditor"
+                                    aria-controls="bannerEditor" aria-expanded="false">
                                 Manage Banner
                             </button>
-
-                            <!-- REPLACE / REMOVE / CANCEL OPTIONS -->
-
-                            <div class="collapse mt-3"
-                                 id="bannerOptions">
-
-                                <div class="border rounded p-3">
-
-                                    <p class="fw-semibold mb-3">
-                                        Would you like to replace or remove
-                                        this banner?
-                                    </p>
-
-                                    <div class="d-flex gap-2 flex-wrap">
-
-                                        <button type="button"
-                                                class="btn btn-success"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#replaceBannerSection"
-                                                aria-expanded="false"
-                                                aria-controls="replaceBannerSection">
-                                            Replace
-                                        </button>
-
-                                        <form asp-controller="Organiser"
-                                              asp-action="RemoveEventBanner"
-                                              method="post"
-                                              class="m-0"
-                                              onsubmit="return confirm('Are you sure you want to remove this event banner?');">
-
-                                            @Html.AntiForgeryToken()
-
-                                            <input type="hidden"
-                                                   name="eventId"
-                                                   value="@Model.EventId" />
-
-                                            <button type="submit"
-                                                    class="btn btn-outline-danger">
-                                                Remove
-                                            </button>
-
-                                        </form>
-
-                                        <button type="button"
-                                                class="btn btn-outline-secondary"
-                                                onclick="closeAllBannerOptions()">
-                                            Cancel
-                                        </button>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                            <!-- REPLACE BANNER FORM -->
-
-                            <div class="collapse mt-3"
-                                 id="replaceBannerSection">
-
-                                <div class="border rounded p-3">
-
-                                    <h6 class="fw-bold">
-                                        Replace Event Banner
-                                    </h6>
-
-                                    <p class="text-muted">
-                                        Choose a new JPG, JPEG, PNG or WEBP image.
-                                        Maximum file size: 5 MB.
-                                    </p>
-
-                                    <form asp-controller="Organiser"
-                                          asp-action="UploadEventBanner"
-                                          method="post"
-                                          enctype="multipart/form-data">
-
-                                        @Html.AntiForgeryToken()
-
-                                        <input type="hidden"
-                                               name="eventId"
-                                               value="@Model.EventId" />
-
-                                        <div class="mb-3">
-
-                                            <label for="bannerImage"
-                                                   class="form-label">
-                                                Choose New Banner Image
-                                            </label>
-
-                                            <input type="file"
-                                                   id="replacementEventBannerInput"
-                                                   name="bannerImage"
-                                                   class="form-control"
-                                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                                   required />
-
-                                        </div>
-                                        <button type="submit"
-                                                id="saveNewEventBannerButton"
-                                                class="btn btn-success me-2"
-                                                disabled>
-                                            Save New Banner
-                                        </button>
-
-                                        <button type="button"
-                                                class="btn btn-outline-secondary"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#replaceBannerSection">
-                                            Cancel
-                                        </button>
-
-                                    </form>
-
-                                </div>
-
-                            </div>
-
+                            <form asp-controller="Organiser" asp-action="RemoveEventBanner" method="post"
+                                  onsubmit="return confirm('Remove this event banner?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="eventId" value="@Model.EventId" />
+                                <button type="submit" class="btn btn-outline-danger">Remove Banner</button>
+                            </form>
                         </div>
                     }
-                    else
-                    {
-                        <div class="mb-2">
 
-                            <h5 class="fw-bold">
-                                Upload Event Banner
-                            </h5>
+                    <div class="@(string.IsNullOrWhiteSpace(Model.BannerImageUrl) ? "" : "collapse")" id="bannerEditor">
+                        <div class="border rounded p-3">
+                            <h6 class="fw-bold">@(string.IsNullOrWhiteSpace(Model.BannerImageUrl) ? "Add Event Banner" : "Replace Event Banner")</h6>
+                            <p class="text-muted small">Choose one method. A URL displays an externally hosted image; a file is uploaded to Azure Storage.</p>
 
-                            <p class="text-muted">
-                                Upload a JPG, JPEG, PNG or WEBP image.
-                                Maximum file size: 5 MB.
-                            </p>
-
-                            <form asp-controller="Organiser"
-                                  asp-action="UploadEventBanner"
-                                  method="post"
-                                  enctype="multipart/form-data">
-
+                            <form asp-controller="Organiser" asp-action="SaveEventBanner" method="post"
+                                  enctype="multipart/form-data" id="bannerUpdateForm">
                                 @Html.AntiForgeryToken()
-
-                                <input type="hidden"
-                                       name="eventId"
-                                       value="@Model.EventId" />
+                                <input type="hidden" name="eventId" value="@Model.EventId" />
 
                                 <div class="mb-3">
-
-                                    <label for="bannerImage"
-                                           class="form-label">
-                                        Choose Banner Image
-                                    </label>
-
-                                    <input type="file"
-                                           id="newEventBannerInput"
-                                           name="bannerImage"
-                                           class="form-control"
-                                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                           required />
-
+                                    <label for="newBannerImageUrl" class="form-label">Banner Image URL</label>
+                                    <input type="url" id="newBannerImageUrl" name="bannerImageUrl"
+                                           class="form-control" placeholder="https://example.com/banner.jpg"
+                                           pattern="https://.*" />
+                                    <div class="form-text">Optional. Paste a direct HTTPS image URL.</div>
                                 </div>
 
-                                <button type="submit"
-                                        id="uploadEventBannerButton"
-                                        class="btn btn-success"
-                                        disabled>
-                                    Upload Banner
+                                <p class="text-center text-muted fw-semibold">OR</p>
+
+                                <div class="mb-3">
+                                    <label for="newBannerImage" class="form-label">Upload Banner Image</label>
+                                    <input type="file" id="newBannerImage" name="bannerImage"
+                                           class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                                    <div class="form-text">JPG, JPEG, PNG or WebP. Maximum 5 MB.</div>
+                                </div>
+
+                                <div id="bannerChoiceError" class="text-danger small mb-2" role="alert"></div>
+                                <button type="submit" id="saveBannerButton" class="btn btn-success" disabled>
+                                    Save New Banner
                                 </button>
-
+                                @if (!string.IsNullOrWhiteSpace(Model.BannerImageUrl))
+                                {
+                                    <button type="button" class="btn btn-outline-secondary ms-2"
+                                            data-bs-toggle="collapse" data-bs-target="#bannerEditor">
+                                        Cancel
+                                    </button>
+                                }
                             </form>
-
                         </div>
-                    }
+                    </div>
 
                 </div>
 
@@ -462,181 +331,39 @@
 }
 
 <script>
-    function closeAllBannerOptions() {
-
-        const replaceSection =
-            document.getElementById(
-                'replaceBannerSection');
-
-        const bannerOptions =
-            document.getElementById(
-                'bannerOptions');
-
-        if (replaceSection) {
-
-            const replaceCollapse =
-                bootstrap.Collapse.getOrCreateInstance(
-                    replaceSection,
-                    {
-                        toggle: false
-                    });
-
-            replaceCollapse.hide();
-        }
-
-        if (bannerOptions) {
-
-            const optionsCollapse =
-                bootstrap.Collapse.getOrCreateInstance(
-                    bannerOptions,
-                    {
-                        toggle: false
-                    });
-
-            optionsCollapse.hide();
-        }
-    }
-</script>
-
-<script>
-    document.addEventListener(
-        'DOMContentLoaded',
-        function() {
-
-            const eventForm =
-                document.getElementById(
-                    'editEventForm');
-
-            const saveButton =
-                document.getElementById(
-                    'eventSaveButton');
-
-            if (!eventForm || !saveButton) {
-                return;
-            }
-
-            const editableFields =
-                Array.from(
-                    eventForm.querySelectorAll(
-                        'input:not([type="hidden"]):not([readonly]), select, textarea'
-                    )
-                );
-
-            const originalValues =
-                editableFields.map(field => ({
-                    field: field,
-                    value: field.value
-                }));
-
-            function eventHasChanges() {
-
-                return originalValues.some(
-                    item =>
-                        item.field.value !==
-                        item.value
-                );
-            }
-
-            function updateSaveButton() {
-
-                saveButton.disabled =
-                    !eventHasChanges();
-            }
-
-            editableFields.forEach(field => {
-
-                field.addEventListener(
-                    'input',
-                    updateSaveButton);
-
-                field.addEventListener(
-                    'change',
-                    updateSaveButton);
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('editEventForm');
+        const save = document.getElementById('eventSaveButton');
+        if (form && save) {
+            const fields = Array.from(form.querySelectorAll('input:not([type="hidden"]), select, textarea'));
+            const initial = fields.map(field => field.value);
+            const changed = () => fields.some((field, i) => field.value !== initial[i]);
+            const update = () => { save.disabled = !changed(); };
+            fields.forEach(field => { field.addEventListener('input', update); field.addEventListener('change', update); });
+            form.addEventListener('submit', function (e) {
+                if (!changed() || !confirm('Are you sure you want to save these event changes?')) e.preventDefault();
             });
+            update();
+        }
 
-            eventForm.addEventListener(
-                'submit',
-                function(event) {
-
-                    if (!eventHasChanges()) {
-                        event.preventDefault();
-                        return;
-                    }
-
-                    const confirmed =
-                        window.confirm(
-                            'Are you sure you want to save these event changes?'
-                        );
-
-                    if (!confirmed) {
-                        event.preventDefault();
-                    }
-                });
-
-            updateSaveButton();
+        const bannerForm = document.getElementById('bannerUpdateForm');
+        const url = document.getElementById('newBannerImageUrl');
+        const file = document.getElementById('newBannerImage');
+        const button = document.getElementById('saveBannerButton');
+        const error = document.getElementById('bannerChoiceError');
+        if (!bannerForm || !url || !file || !button || !error) return;
+        const updateBanner = () => {
+            const hasUrl = url.value.trim().length > 0;
+            const hasFile = file.files.length > 0;
+            error.textContent = hasUrl && hasFile ? 'Choose either a URL or a file, not both.' : '';
+            button.disabled = (hasUrl === hasFile);
+        };
+        url.addEventListener('input', updateBanner);
+        file.addEventListener('change', updateBanner);
+        bannerForm.addEventListener('submit', function (e) {
+            updateBanner();
+            if (button.disabled) e.preventDefault();
         });
-</script>
-
-<script>
-    document.addEventListener(
-        'DOMContentLoaded',
-        function() {
-
-            const bannerInput =
-                document.getElementById(
-                    'newEventBannerInput');
-
-            const uploadBannerButton =
-                document.getElementById(
-                    'uploadEventBannerButton');
-
-            if (!bannerInput ||
-                !uploadBannerButton) {
-                return;
-            }
-
-            function updateBannerUploadButton() {
-
-                uploadBannerButton.disabled =
-                    bannerInput.files.length === 0;
-            }
-
-            bannerInput.addEventListener(
-                'change',
-                updateBannerUploadButton);
-
-            updateBannerUploadButton();
-        });
-</script>
-
-<script>
-    document.addEventListener(
-        'DOMContentLoaded',
-        function() {
-
-            const replacementBannerInput =
-                document.getElementById(
-                    'replacementEventBannerInput');
-
-            const saveNewBannerButton =
-                document.getElementById(
-                    'saveNewEventBannerButton');
-
-            if (!replacementBannerInput ||
-                !saveNewBannerButton) {
-                return;
-            }
-
-            function updateReplacementBannerButton() {
-
-                saveNewBannerButton.disabled =
-                    replacementBannerInput.files.length === 0;
-            }
-
-            replacementBannerInput.addEventListener(
-                'change',
-                updateReplacementBannerButton);
-
-            updateReplacementBannerButton();
-        });
+        updateBanner();
+    });
 </script>

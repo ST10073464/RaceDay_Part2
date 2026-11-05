@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace RaceDay.Mvc.Models
 {
@@ -31,5 +32,8 @@ namespace RaceDay.Mvc.Models
 
         [Display(Name = "Banner Image URL")]
         public string? BannerImageUrl { get; set; }
+
+        [Display(Name = "Upload Banner Image")]
+        public IFormFile? BannerImage { get; set; }
     }
 }

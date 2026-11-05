@@ -10,242 +10,132 @@ public class BlobStorageService
 
     public BlobStorageService(IConfiguration configuration)
     {
-        string connectionString =
-            configuration["AzureStorage:ConnectionString"]
-            ?? throw new InvalidOperationException(
-                "Azure Storage connection string is not configured.");
-
-        string containerName =
-            configuration["AzureStorage:ProfilePicturesContainer"]
+        string connectionString = configuration["AzureStorage:ConnectionString"]
+            ?? throw new InvalidOperationException("Azure Storage connection string is not configured.");
+        string containerName = configuration["AzureStorage:ProfilePicturesContainer"]
             ?? "profile-pictures";
-
-        _containerClient = new BlobContainerClient(
-            connectionString,
-            containerName);
+        _containerClient = new BlobContainerClient(connectionString, containerName);
     }
 
-    public async Task<string> UploadProfilePictureAsync(
-        IFormFile file,
-        int userId)
+    public async Task<string> UploadProfilePictureAsync(IFormFile file, int userId)
     {
-        if (file == null || file.Length == 0)
-        {
-            throw new ArgumentException(
-                "A profile picture is required.",
-                nameof(file));
-        }
-
-        string extension =
-            Path.GetExtension(file.FileName).ToLowerInvariant();
-
-        string[] allowedExtensions =
-        {
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".webp"
-        };
-
-        if (!allowedExtensions.Contains(extension))
-        {
-            throw new ArgumentException(
-                "Only JPG, JPEG, PNG and WEBP images are allowed.");
-        }
-
-        const long maximumFileSize = 5 * 1024 * 1024;
-
-        if (file.Length > maximumFileSize)
-        {
-            throw new ArgumentException(
-                "The profile picture cannot exceed 5 MB.");
-        }
-
-        string blobName =
-            $"users/{userId}/{Guid.NewGuid():N}{extension}";
-
-        BlobClient blobClient =
-            _containerClient.GetBlobClient(blobName);
-
-        BlobHttpHeaders headers = new()
-        {
-            ContentType = file.ContentType
-        };
-
-        await using Stream stream =
-            file.OpenReadStream();
-
-        await blobClient.UploadAsync(
-            stream,
-            new BlobUploadOptions
-            {
-                HttpHeaders = headers
-            });
-
-        return blobClient.Uri.ToString();
+        ValidateImage(file, "profile picture");
+        string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        string blobName = $"users/{userId}/{Guid.NewGuid():N}{extension}";
+        return await UploadImageAsync(file, blobName);
     }
 
-    // ---------------------------------------------------------
-    // GENERATE TEMPORARY READ-ONLY PROFILE PICTURE URL
-    // ---------------------------------------------------------
-
-    public string GetProfilePictureReadUrl(
-        string profilePictureUrl)
+    public string GetProfilePictureReadUrl(string profilePictureUrl)
     {
-        if (string.IsNullOrWhiteSpace(profilePictureUrl))
-        {
+        if (!TryGetOwnedBlobName(profilePictureUrl, out string blobName))
             return string.Empty;
-        }
 
-        Uri storedUri =
-            new Uri(profilePictureUrl);
-
-        string containerPath =
-            $"/{_containerClient.Name}/";
-
-        int containerIndex =
-            storedUri.AbsolutePath.IndexOf(
-                containerPath,
-                StringComparison.OrdinalIgnoreCase);
-
-        if (containerIndex < 0)
-        {
-            throw new InvalidOperationException(
-                "The stored profile picture URL is invalid.");
-        }
-
-        string blobName =
-            storedUri.AbsolutePath[
-                (containerIndex + containerPath.Length)..];
-
-        blobName =
-            Uri.UnescapeDataString(blobName);
-
-        BlobClient blobClient =
-            _containerClient.GetBlobClient(blobName);
-
+        BlobClient blobClient = _containerClient.GetBlobClient(blobName);
         if (!blobClient.CanGenerateSasUri)
-        {
-            throw new InvalidOperationException(
-                "A SAS URL cannot be generated for this blob.");
-        }
+            return string.Empty;
 
-        Uri sasUri =
-            blobClient.GenerateSasUri(
-                BlobSasPermissions.Read,
-                DateTimeOffset.UtcNow.AddMinutes(30));
-
-        return sasUri.ToString();
+        return blobClient.GenerateSasUri(
+            BlobSasPermissions.Read,
+            DateTimeOffset.UtcNow.AddMinutes(30)).ToString();
     }
 
-    // ---------------------------------------------------------
-    // GENERATE TEMPORARY READ-ONLY EVENT BANNER URL
-    // ---------------------------------------------------------
-    public string GetEventBannerReadUrl(
-        string bannerImageUrl)
+    public string GetEventBannerReadUrl(string bannerImageUrl)
     {
-        return GetProfilePictureReadUrl(
-            bannerImageUrl);
+        if (string.IsNullOrWhiteSpace(bannerImageUrl))
+            return string.Empty;
+
+        if (!Uri.TryCreate(bannerImageUrl, UriKind.Absolute, out Uri? uri)
+            || uri.Scheme != Uri.UriSchemeHttps
+            || !string.IsNullOrEmpty(uri.UserInfo))
+            return string.Empty;
+
+        // Azure images must be signed; external HTTPS images can be displayed as-is.
+        if (IsOurStorageHost(uri))
+            return GetProfilePictureReadUrl(bannerImageUrl);
+
+        return uri.ToString();
     }
 
-    public async Task<string> UploadEventBannerAsync(
-    IFormFile file,
-    int eventId)
+    public async Task<string> UploadEventBannerAsync(IFormFile file, int eventId)
     {
-        if (file == null || file.Length == 0)
-        {
-            throw new ArgumentException(
-                "An event banner image is required.",
-                nameof(file));
-        }
-
-        string extension =
-            Path.GetExtension(file.FileName).ToLowerInvariant();
-
-        string[] allowedExtensions =
-        {
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".webp"
-    };
-
-        if (!allowedExtensions.Contains(extension))
-        {
-            throw new ArgumentException(
-                "Only JPG, JPEG, PNG and WEBP images are allowed.");
-        }
-
-        const long maximumFileSize = 5 * 1024 * 1024;
-
-        if (file.Length > maximumFileSize)
-        {
-            throw new ArgumentException(
-                "The event banner image cannot exceed 5 MB.");
-        }
-
-        string blobName =
-            $"events/{eventId}/banner-{Guid.NewGuid():N}{extension}";
-
-        BlobClient blobClient =
-            _containerClient.GetBlobClient(blobName);
-
-        BlobHttpHeaders headers = new()
-        {
-            ContentType = file.ContentType
-        };
-
-        await using Stream stream =
-            file.OpenReadStream();
-
-        await blobClient.UploadAsync(
-            stream,
-            new BlobUploadOptions
-            {
-                HttpHeaders = headers
-            });
-
-        return blobClient.Uri.ToString();
+        ValidateImage(file, "event banner image");
+        string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        string blobName = $"events/{eventId}/banner-{Guid.NewGuid():N}{extension}";
+        return await UploadImageAsync(file, blobName);
     }
-    // ---------------------------------------------------------
-    // DELETE STORED IMAGE
-    // ---------------------------------------------------------
 
-    public async Task<bool> DeleteImageAsync(
-        string imageUrl)
+    public async Task<bool> DeleteImageAsync(string imageUrl)
     {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
+        // External URLs must never be deleted through our storage account.
+        if (!TryGetOwnedBlobName(imageUrl, out string blobName))
             return false;
-        }
 
-        Uri storedUri =
-            new Uri(imageUrl);
-
-        string containerPath =
-            $"/{_containerClient.Name}/";
-
-        int containerIndex =
-            storedUri.AbsolutePath.IndexOf(
-                containerPath,
-                StringComparison.OrdinalIgnoreCase);
-
-        if (containerIndex < 0)
-        {
-            throw new InvalidOperationException(
-                "The stored image URL is invalid.");
-        }
-
-        string blobName =
-            storedUri.AbsolutePath[
-                (containerIndex + containerPath.Length)..];
-
-        blobName =
-            Uri.UnescapeDataString(blobName);
-
-        BlobClient blobClient =
-            _containerClient.GetBlobClient(blobName);
-
+        BlobClient blobClient = _containerClient.GetBlobClient(blobName);
         return await blobClient.DeleteIfExistsAsync(
             DeleteSnapshotsOption.IncludeSnapshots);
+    }
+
+    private bool IsOurStorageHost(Uri uri)
+    {
+        Uri containerUri = _containerClient.Uri;
+        return uri.Scheme == Uri.UriSchemeHttps
+            && string.Equals(uri.Host, containerUri.Host, StringComparison.OrdinalIgnoreCase)
+            && uri.Port == containerUri.Port;
+    }
+
+    private bool TryGetOwnedBlobName(string? imageUrl, out string blobName)
+    {
+        blobName = string.Empty;
+        if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out Uri? uri)
+            || !IsOurStorageHost(uri)
+            || !string.IsNullOrEmpty(uri.UserInfo))
+            return false;
+
+        string prefix = _containerClient.Uri.AbsolutePath.TrimEnd('/') + "/";
+        if (!uri.AbsolutePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        string candidate = Uri.UnescapeDataString(uri.AbsolutePath[prefix.Length..]);
+        if (string.IsNullOrWhiteSpace(candidate)
+            || candidate.StartsWith('/')
+            || candidate.Contains('\\')
+            || candidate.Split('/').Any(segment => segment == "." || segment == ".."))
+            return false;
+
+        blobName = candidate;
+        return true;
+    }
+
+    private async Task<string> UploadImageAsync(IFormFile file, string blobName)
+    {
+        BlobClient blobClient = _containerClient.GetBlobClient(blobName);
+        var headers = new BlobHttpHeaders { ContentType = file.ContentType };
+        await using Stream stream = file.OpenReadStream();
+        await blobClient.UploadAsync(stream, new BlobUploadOptions { HttpHeaders = headers });
+        return blobClient.Uri.ToString();
+    }
+
+    private static void ValidateImage(IFormFile file, string description)
+    {
+        if (file == null || file.Length == 0)
+            throw new ArgumentException($"A {description} is required.", nameof(file));
+
+        string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (extension is not (".jpg" or ".jpeg" or ".png" or ".webp"))
+            throw new ArgumentException("Only JPG, JPEG, PNG and WEBP images are allowed.");
+
+        if (file.Length > 5 * 1024 * 1024)
+            throw new ArgumentException($"The {description} cannot exceed 5 MB.");
+
+        string contentType = file.ContentType.ToLowerInvariant();
+        bool matchingType = extension switch
+        {
+            ".jpg" or ".jpeg" => contentType == "image/jpeg",
+            ".png" => contentType == "image/png",
+            ".webp" => contentType == "image/webp",
+            _ => false
+        };
+        if (!matchingType)
+            throw new ArgumentException("The image file type does not match its extension.");
     }
 }
