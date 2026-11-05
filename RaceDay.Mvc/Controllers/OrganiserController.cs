@@ -17,6 +17,49 @@ namespace RaceDay.Mvc.Controllers
             _logger = logger;
         }
 
+
+        // Ownership is checked against the authenticated organiser's own event list.
+        // This fails closed when the API cannot verify ownership.
+        private bool IsOrganiser() =>
+            string.Equals(HttpContext.Session.GetString("Role"),
+                "Organiser", StringComparison.OrdinalIgnoreCase);
+
+        private async Task<bool> OwnsEventAsync(int eventId)
+        {
+            if (eventId <= 0) return false;
+            try
+            {
+                var ownedEvents = await _apiClient.GetMyEventsAsync();
+                return ownedEvents.Any(e => e.EventId == eventId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Could not verify event ownership for event {EventId}.", eventId);
+                return false;
+            }
+        }
+
+        // READ-ONLY LIST OF EVENTS FROM ALL ORGANISERS
+        [HttpGet]
+        public async Task<IActionResult> AllEvents()
+        {
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            try
+            {
+                var events = await _apiClient.GetEventsAsync();
+                return View(events.OrderBy(e => e.EventDate).ToList());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to load all events.");
+                TempData["ErrorMessage"] = "Events could not be loaded.";
+                return View(new List<EventViewModel>());
+            }
+        }
+
         // ORGANISER DASHBOARD
         public async Task<IActionResult> Index()
         {
@@ -223,6 +266,13 @@ namespace RaceDay.Mvc.Controllers
         [HttpGet]
         public async Task<IActionResult> EditEvent(int id)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(id))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -286,6 +336,13 @@ namespace RaceDay.Mvc.Controllers
         public async Task<IActionResult> EditEvent(
             EditEventViewModel model)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(model.EventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -373,6 +430,13 @@ namespace RaceDay.Mvc.Controllers
         [HttpGet]
         public async Task<IActionResult> ManageCategories(int eventId)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -441,6 +505,13 @@ namespace RaceDay.Mvc.Controllers
         public async Task<IActionResult> CreateCategory(
             ManageCategoriesViewModel model)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(model.EventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -547,6 +618,13 @@ namespace RaceDay.Mvc.Controllers
             int categoryId,
             int eventId)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -630,6 +708,13 @@ namespace RaceDay.Mvc.Controllers
             int eventId,
             int enrolmentId)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -743,6 +828,13 @@ namespace RaceDay.Mvc.Controllers
         public async Task<IActionResult> RecordResult(
             RecordResultViewModel model)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(model.EventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -818,6 +910,13 @@ namespace RaceDay.Mvc.Controllers
         public async Task<IActionResult> EventResults(
             int eventId)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -895,6 +994,13 @@ namespace RaceDay.Mvc.Controllers
         [HttpGet]
         public async Task<IActionResult> EventParticipants(int eventId)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
             var role =
                 HttpContext.Session.GetString("Role");
 
@@ -1019,6 +1125,13 @@ namespace RaceDay.Mvc.Controllers
             int eventId,
             IFormFile? bannerImage)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
             string? userRole =
                 HttpContext.Session.GetString("Role");
 
@@ -1092,6 +1205,13 @@ namespace RaceDay.Mvc.Controllers
         public async Task<IActionResult> RemoveEventBanner(
             int eventId)
         {
+            // Reject direct URL access and forged submissions for events owned by another organiser.
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
             string? userRole =
                 HttpContext.Session.GetString("Role");
 
@@ -1145,3 +1265,4 @@ namespace RaceDay.Mvc.Controllers
         }
     }
 }
+
