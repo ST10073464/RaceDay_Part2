@@ -11,519 +11,359 @@
 
 @if (!isParticipant)
 {
-    <div class="text-center py-5">
-        <h1 class="display-4">Welcome to RaceDay</h1>
+    <style>
+        .rd-home {
+            --rd-ink: #092b3b;
+            --rd-teal: #0f5158;
+            --rd-lime: #d5fb8b;
+            color: var(--rd-ink);
+        }
 
-        <p class="lead mt-3">
-            Discover events, register for races and manage your RaceDay journey.
-        </p>
+            .rd-home .rd-hero {
+                position: relative;
+                isolation: isolate;
+                overflow: hidden;
+                border-radius: 25px;
+                min-height: 460px;
+                display: flex;
+                align-items: center;
+                background: linear-gradient(90deg, rgba(1,31,43,.96) 0%, rgba(1,37,51,.87) 43%, rgba(0,70,103,.30) 100%), url('https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1800&q=85') center 48% / cover;
+            }
 
-        <div class="mt-4">
-            <a asp-controller="Account"
-               asp-action="Login"
-               class="btn btn-primary me-2">
-                Login
-            </a>
+            .rd-home .rd-hero-content {
+                padding: clamp(32px, 6vw, 75px);
+                max-width: 690px;
+                color: white;
+            }
 
-            <a asp-controller="Account"
-               asp-action="Register"
-               class="btn btn-outline-primary">
-                Create Account
-            </a>
-        </div>
+            .rd-home .rd-kicker {
+                display: inline-block;
+                font-size: .78rem;
+                font-weight: 800;
+                letter-spacing: .09em;
+                color: var(--rd-lime);
+                background: rgba(213,251,139,.12);
+                border: 1px solid rgba(213,251,139,.4);
+                padding: 9px 16px;
+                border-radius: 30px;
+            }
+
+            .rd-home .rd-hero h1 {
+                font-size: clamp(2.45rem, 5vw, 4.3rem);
+                line-height: 1.06;
+                letter-spacing: -.045em;
+                font-weight: 850;
+                margin: 26px 0 20px;
+            }
+
+            .rd-home .rd-hero p {
+                font-size: 1.08rem;
+                line-height: 1.8;
+                max-width: 530px;
+            }
+
+            .rd-home .rd-button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 13px 22px;
+                border-radius: 11px;
+                font-weight: 800;
+                text-decoration: none;
+                transition: transform .15s ease;
+            }
+
+                .rd-home .rd-button:hover {
+                    transform: translateY(-2px);
+                }
+
+            .rd-home .rd-button-lime {
+                background: var(--rd-lime);
+                color: #092b3b;
+            }
+
+            .rd-home .rd-button-outline {
+                border: 1px solid rgba(255,255,255,.8);
+                color: white;
+            }
+
+                .rd-home .rd-button-outline:hover {
+                    background: rgba(255,255,255,.13);
+                    color: white;
+                }
+
+            .rd-home .rd-login-link {
+                color: var(--rd-lime);
+                font-weight: 800;
+            }
+
+            .rd-home .rd-section {
+                padding: 72px 0 12px;
+            }
+
+            .rd-home .rd-eyebrow {
+                font-size: .78rem;
+                font-weight: 850;
+                letter-spacing: .15em;
+                text-transform: uppercase;
+                color: #007a7a;
+            }
+
+            .rd-home .rd-section-title {
+                font-weight: 850;
+                letter-spacing: -.035em;
+                font-size: clamp(1.8rem, 3.5vw, 2.7rem);
+            }
+
+            .rd-home .rd-muted {
+                color: #567082;
+                line-height: 1.8;
+            }
+
+            .rd-home .rd-activity {
+                border: 1px solid #e1e9eb;
+                border-radius: 20px;
+                overflow: hidden;
+                height: 100%;
+                background: #fff;
+                box-shadow: 0 10px 35px rgba(4,42,54,.06);
+            }
+
+                .rd-home .rd-activity img {
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    display: block;
+                }
+
+            .rd-home .rd-activity-body {
+                padding: 25px;
+            }
+
+            .rd-home .rd-activity h3 {
+                font-weight: 800;
+                font-size: 1.35rem;
+            }
+
+            .rd-home .rd-wellness {
+                margin-top: 70px;
+                padding: clamp(28px, 5vw, 55px);
+                background: #edf7f1;
+                border-radius: 24px;
+            }
+
+                .rd-home .rd-wellness h2 {
+                    font-weight: 850;
+                    letter-spacing: -.035em;
+                }
+
+            .rd-home .rd-benefit {
+                padding: 16px 0;
+                border-bottom: 1px solid #ccdfd7;
+            }
+
+                .rd-home .rd-benefit:last-child {
+                    border-bottom: 0;
+                }
+
+                .rd-home .rd-benefit strong {
+                    display: block;
+                    margin-bottom: 6px;
+                }
+
+            .rd-home .rd-cta {
+                margin: 58px 0 30px;
+                border-radius: 24px;
+                padding: 46px 22px;
+                background: #103e45;
+                color: white;
+                text-align: center;
+            }
+
+                .rd-home .rd-cta h2 {
+                    font-weight: 850;
+                }
+
+        @@media (max-width: 575px) {
+            .rd-home .rd-hero {
+                min-height: 500px;
+            }
+
+            .rd-home .rd-hero-content {
+                padding: 32px 24px;
+            }
+
+            .rd-home .rd-hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .rd-home .rd-activity img {
+                height: 180px;
+            }
+        }
+    </style>
+
+    <div class="rd-home py-3">
+        <section class="rd-hero" aria-labelledby="rd-hero-title">
+            <div class="rd-hero-content">
+                <span class="rd-kicker">MOVE MORE. FEEL BETTER. TOGETHER.</span>
+                <h1 id="rd-hero-title">Every step starts something great.</h1>
+                <p>Find your next run, enjoy a refreshing walk, and connect with a community that celebrates every finish line. Your pace. Your journey. Your RaceDay.</p>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a asp-controller="Account" asp-action="Register" class="rd-button rd-button-lime">Get Started</a>
+                    <a asp-controller="Account" asp-action="Login" class="rd-button rd-button-outline">Explore Events</a>
+                </div>
+                <p class="mt-3 mb-0" style="font-size: .95rem;">Already have an account? <a asp-controller="Account" asp-action="Login" class="rd-login-link">Log in</a></p>
+            </div>
+        </section>
+
+        <section class="rd-section text-center" aria-labelledby="rd-movement-title">
+            <div class="rd-eyebrow mb-3">FIND YOUR KIND OF MOVEMENT</div>
+            <h2 id="rd-movement-title" class="rd-section-title">There's a RaceDay for everyone.</h2>
+            <p class="rd-muted mx-auto mt-3 mb-4" style="max-width: 690px;">Whether you're chasing a personal best or simply enjoying the outdoors, every journey deserves a starting line.</p>
+            <div class="row g-4 text-start mt-2">
+                <div class="col-md-4">
+                    <article class="rd-activity">
+                        <img src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=800&q=80" alt="People enjoying a run outdoors" loading="lazy" />
+                        <div class="rd-activity-body"><h3>Running events</h3><p class="rd-muted mb-0">Find your rhythm, set your own goals, and enjoy the energy of race day.</p></div>
+                    </article>
+                </div>
+                <div class="col-md-4">
+                    <article class="rd-activity">
+                        <img src="https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=800&q=80" alt="Outdoor walking and movement" loading="lazy" />
+                        <div class="rd-activity-body"><h3>Walking events</h3><p class="rd-muted mb-0">Take a breath, enjoy the scenery, and move at a pace that feels right for you.</p></div>
+                    </article>
+                </div>
+                <div class="col-md-4">
+                    <article class="rd-activity">
+                        <img src="https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=800&q=80" alt="Swimming as a form of fitness and wellbeing" loading="lazy" />
+                        <div class="rd-activity-body"><h3>More ways to move</h3><p class="rd-muted mb-0">Discover activities that help you stay active, build confidence, and connect.</p></div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="rd-wellness" aria-labelledby="rd-wellness-title">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-6">
+                    <div class="rd-eyebrow mb-3">MOVEMENT FOR YOUR MIND</div>
+                    <h2 id="rd-wellness-title" class="mb-3">A little movement can make a big difference.</h2>
+                    <p class="rd-muted">Running and walking are about more than distance. Regular physical activity can support mood, reduce stress, improve sleep and create opportunities to connect with others.</p>
+                    <p class="rd-muted mb-0">You don't have to be the fastest. Showing up and taking the next step is already worth celebrating.</p>
+                </div>
+                <div class="col-lg-6">
+                    <div class="rd-benefit"><strong>Clear your mind</strong><span class="rd-muted">Make space in your day to unwind and reset.</span></div>
+                    <div class="rd-benefit"><strong>Build confidence</strong><span class="rd-muted">Set personal goals and celebrate progress at your own pace.</span></div>
+                    <div class="rd-benefit"><strong>Feel connected</strong><span class="rd-muted">Move alongside a welcoming community of people with shared interests.</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="rd-cta" aria-labelledby="rd-cta-title">
+            <h2 id="rd-cta-title">Your next great day starts here.</h2>
+            <p>Join RaceDay, discover events and make every step count.</p>
+            <a asp-controller="Account" asp-action="Register" class="rd-button rd-button-lime mt-2">Create Your Account</a>
+            <p class="mt-3 mb-0">Already have an account? <a asp-controller="Account" asp-action="Login" class="rd-login-link">Log in</a></p>
+        </section>
     </div>
 }
 else
 {
     <div class="py-4">
-
         <!-- PARTICIPANT DASHBOARD HEADER -->
-
         <div class="mb-4">
             <h1 class="fw-bold">Participant Dashboard</h1>
-
-            <p class="text-muted mb-0">
-                Welcome, @email
-            </p>
-
-            <p class="text-muted">
-                Browse the available RaceDay events below.
-            </p>
+            <p class="text-muted mb-0">Welcome, @email</p>
+            <p class="text-muted">Browse the available RaceDay events below.</p>
         </div>
-
 
         <!-- API ERROR MESSAGE -->
-
         @if (ViewBag.EventError != null)
         {
-            <div class="alert alert-danger">
-                @ViewBag.EventError
-            </div>
+            <div class="alert alert-danger">@ViewBag.EventError</div>
         }
 
-
         <!-- DASHBOARD SUMMARY -->
-
         <div class="row mb-4">
-
             <div class="col-md-4 mb-3">
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
-                        <h6 class="text-muted">
-                            Available Events
-                        </h6>
-
-                        <h2 class="fw-bold">
-                            @Model.Count
-                        </h2>
-
-                        <p class="mb-0">
-                            Events currently available.
-                        </p>
+                        <h6 class="text-muted">Available Events</h6>
+                        <h2 class="fw-bold">@(Model?.Count ?? 0)</h2>
+                        <p class="mb-0">Events currently available.</p>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-4 mb-3">
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
-                        <h6 class="text-muted">
-                            Account Role
-                        </h6>
-
-                        <h4 class="fw-bold">
-                            Participant
-                        </h4>
-
-                        <p class="mb-0">
-                            Participant access enabled.
-                        </p>
+                        <h6 class="text-muted">Account Role</h6>
+                        <h4 class="fw-bold">Participant</h4>
+                        <p class="mb-0">Participant access enabled.</p>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-4 mb-3">
                 <div class="card shadow-sm h-100">
-                    <div class="card-body d-flex flex-column">
-
-                        <h6 class="text-muted">
-                            My Results
-                        </h6>
-
-                        <h4 class="fw-bold">
-                            Race Results
-                        </h4>
-
-                        <p class="mb-3">
-                            View your published event results.
-                        </p>
-
-                        <div class="mt-auto">
-                            <a asp-controller="Home"
-                               asp-action="MyResults"
-                               class="btn btn-outline-success">
-                                View My Results
-                            </a>
-                        </div>
-
+                    <div class="card-body">
+                        <h6 class="text-muted">RaceDay Account</h6>
+                        <h4 class="fw-bold">Active</h4>
+                        <p class="mb-0">@email</p>
                     </div>
                 </div>
             </div>
-
         </div>
-
 
         <!-- AVAILABLE EVENTS -->
-
-        <div class="d-flex justify-content-between
-                    align-items-center mb-3">
-
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-                <h2 class="fw-bold mb-1">
-                    Available Events
-                </h2>
-
-                <p class="text-muted mb-0">
-                    Select an event to view its information.
-                </p>
-            </div>
-
-        </div>
-
-        <!-- EVENT FILTERS -->
-
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-
-                <div class="d-flex justify-content-between
-                    align-items-center mb-3">
-
-                    <div>
-                        <h5 class="fw-bold mb-1">
-                            Filter Events
-                        </h5>
-
-                        <p class="text-muted mb-0">
-                            Find events that match your preferences.
-                        </p>
-                    </div>
-
-                    <button type="button"
-                            id="clearEventFilters"
-                            class="btn btn-outline-secondary btn-sm">
-                        Clear Filters
-                    </button>
-
-                </div>
-
-                <div class="row g-3">
-
-                    <!-- Event Type -->
-
-                    <div class="col-md-4">
-
-                        <label for="eventTypeFilter"
-                               class="form-label">
-                            Event Type
-                        </label>
-
-                        <select id="eventTypeFilter"
-                                class="form-select">
-
-                            <option value="">
-                                All Event Types
-                            </option>
-
-                            @foreach (var eventType in Model
-                                .Select(e => e.EventType)
-                                .Where(e => !string.IsNullOrWhiteSpace(e))
-                                .Distinct()
-                                .OrderBy(e => e))
-                            {
-                                <option value="@eventType">
-                                    @eventType
-                                </option>
-                            }
-
-                        </select>
-
-                    </div>
-
-                    <!-- Location -->
-
-                    <div class="col-md-4">
-
-                        <label for="locationFilter"
-                               class="form-label">
-                            Location
-                        </label>
-
-                        <select id="locationFilter"
-                                class="form-select">
-
-                            <option value="">
-                                All Locations
-                            </option>
-
-                            @foreach (var location in Model
-                                .Select(e => e.Location)
-                                .Where(e => !string.IsNullOrWhiteSpace(e))
-                                .Distinct()
-                                .OrderBy(e => e))
-                            {
-                                <option value="@location">
-                                    @location
-                                </option>
-                            }
-
-                        </select>
-
-                    </div>
-
-                    <!-- Maximum Distance -->
-
-                    <div class="col-md-4">
-
-                        <label for="distanceFilter"
-                               class="form-label">
-                            Maximum Distance
-                        </label>
-
-                        <select id="distanceFilter"
-                                class="form-select">
-
-                            <option value="">
-                                Any Distance
-                            </option>
-
-                            <option value="5">
-                                Up to 5 km
-                            </option>
-
-                            <option value="10">
-                                Up to 10 km
-                            </option>
-
-                            <option value="21.1">
-                                Up to 21.1 km
-                            </option>
-
-                            <option value="42.2">
-                                Up to 42.2 km
-                            </option>
-
-                            <option value="100">
-                                Up to 100 km
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                </div>
-
-                <div class="mt-3">
-
-                    <span class="text-muted">
-                        Showing
-                        <strong id="visibleEventCount">
-                            @Model.Count
-                        </strong>
-                        of
-                        <strong>
-                            @Model.Count
-                        </strong>
-                        events
-                    </span>
-
-                </div>
-
+                <h2 class="fw-bold mb-1">Available Events</h2>
+                <p class="text-muted mb-0">Select an event to view its information.</p>
             </div>
         </div>
-
 
         @if (Model == null || Model.Count == 0)
         {
-            <div class="alert alert-info mt-3">
-                No RaceDay events are currently available.
-            </div>
+            <div class="alert alert-info mt-3">No RaceDay events are currently available.</div>
         }
         else
         {
             <div class="row">
-
                 @foreach (var raceEvent in Model)
                 {
-                    <div class="col-lg-4 col-md-6 mb-4 event-card"
-                         data-event-type="@raceEvent.EventType"
-                         data-location="@raceEvent.Location"
-                         data-distance="@raceEvent.DistanceKm">
-
+                    <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card shadow-sm h-100">
-
-                            @if (!string.IsNullOrWhiteSpace(
-                                    raceEvent.BannerImageUrl))
+                            @if (!string.IsNullOrWhiteSpace(raceEvent.BannerImageUrl))
                             {
                                 <img src="@raceEvent.BannerImageUrl"
                                      class="card-img-top"
                                      alt="@raceEvent.EventName"
-                                     style="height: 200px;
-                                            object-fit: cover;" />
+                                     style="height: 200px; object-fit: cover;" />
                             }
-
-                            <div class="card-body d-flex
-                                        flex-column">
-
-                                <div class="mb-2">
-
-                                    <span class="badge bg-primary">
-                                        @raceEvent.EventType
-                                    </span>
-
-                                </div>
-
-                                <h4 class="card-title fw-bold">
-                                    @raceEvent.EventName
-                                </h4>
-
-                                @if (!string.IsNullOrWhiteSpace(
-                                        raceEvent.Description))
+                            <div class="card-body d-flex flex-column">
+                                <div class="mb-2"><span class="badge bg-primary">@raceEvent.EventType</span></div>
+                                <h4 class="card-title fw-bold">@raceEvent.EventName</h4>
+                                @if (!string.IsNullOrWhiteSpace(raceEvent.Description))
                                 {
-                                    <p class="card-text text-muted">
-                                        @raceEvent.Description
-                                    </p>
+                                    <p class="card-text text-muted">@raceEvent.Description</p>
                                 }
-
                                 <div class="mt-2">
-
-                                    <p class="mb-2">
-                                        <strong>Date:</strong>
-                                        @raceEvent.EventDate.ToString(
-                                            "dd MMMM yyyy")
-                                    </p>
-
-                                    <p class="mb-2">
-                                        <strong>Location:</strong>
-                                        @raceEvent.Location
-                                    </p>
-
-                                    <p class="mb-2">
-                                        <strong>Distance:</strong>
-                                        @raceEvent.DistanceKm km
-                                    </p>
-
+                                    <p class="mb-2"><strong>Date:</strong> @raceEvent.EventDate.ToString("dd MMMM yyyy")</p>
+                                    <p class="mb-2"><strong>Location:</strong> @raceEvent.Location</p>
+                                    <p class="mb-2"><strong>Distance:</strong> @raceEvent.DistanceKm km</p>
                                 </div>
-
                                 <div class="mt-auto pt-3">
-
                                     <a asp-controller="Home"
                                        asp-action="EventDetails"
                                        asp-route-id="@raceEvent.EventId"
-                                       class="btn btn-primary w-100">
-                                        View Event
-                                    </a>
-
+                                       class="btn btn-primary w-100">View Event</a>
                                 </div>
-
                             </div>
-
-                            <div class="card-footer
-                                        bg-white text-muted">
-
-                                Event ID:
-                                @raceEvent.EventId
-
-                            </div>
-
+                            <div class="card-footer bg-white text-muted">Event ID: @raceEvent.EventId</div>
                         </div>
-
                     </div>
                 }
-
             </div>
         }
-
-        @section Scripts
-        {
-            <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-
-                        const eventTypeFilter =
-                            document.getElementById("eventTypeFilter");
-
-                        const locationFilter =
-                            document.getElementById("locationFilter");
-
-                        const distanceFilter =
-                            document.getElementById("distanceFilter");
-
-                        const clearFiltersButton =
-                            document.getElementById("clearEventFilters");
-
-                        const visibleEventCount =
-                            document.getElementById("visibleEventCount");
-
-                        const eventCards =
-                            document.querySelectorAll(".event-card");
-
-                        if (!eventTypeFilter ||
-                            !locationFilter ||
-                            !distanceFilter ||
-                            !clearFiltersButton ||
-                            !visibleEventCount) {
-                            return;
-                        }
-
-                        function applyFilters() {
-
-                            const selectedType =
-                                eventTypeFilter.value
-                                    .trim()
-                                    .toLowerCase();
-
-                            const selectedLocation =
-                                locationFilter.value
-                                    .trim()
-                                    .toLowerCase();
-
-                            const selectedDistance =
-                                distanceFilter.value;
-
-                            let visibleCount = 0;
-
-                            eventCards.forEach(function(card) {
-
-                                const eventType =
-                                    (card.dataset.eventType || "")
-                                        .trim()
-                                        .toLowerCase();
-
-                                const location =
-                                    (card.dataset.location || "")
-                                        .trim()
-                                        .toLowerCase();
-
-                                const distance =
-                                    parseFloat(
-                                        card.dataset.distance || "0");
-
-                                const matchesType =
-                                    selectedType === "" ||
-                                    eventType === selectedType;
-
-                                const matchesLocation =
-                                    selectedLocation === "" ||
-                                    location === selectedLocation;
-
-                                const matchesDistance =
-                                    selectedDistance === "" ||
-                                    distance <= parseFloat(
-                                        selectedDistance);
-
-                                const isVisible =
-                                    matchesType &&
-                                    matchesLocation &&
-                                    matchesDistance;
-
-                                card.classList.toggle(
-                                    "d-none",
-                                    !isVisible);
-
-                                if (isVisible) {
-                                    visibleCount++;
-                                }
-                            });
-
-                            visibleEventCount.textContent =
-                                visibleCount.toString();
-                        }
-
-                        eventTypeFilter.addEventListener(
-                            "change",
-                            applyFilters);
-
-                        locationFilter.addEventListener(
-                            "change",
-                            applyFilters);
-
-                        distanceFilter.addEventListener(
-                            "change",
-                            applyFilters);
-
-                        clearFiltersButton.addEventListener(
-                            "click",
-                            function() {
-
-                                eventTypeFilter.value = "";
-                                locationFilter.value = "";
-                                distanceFilter.value = "";
-
-                                applyFilters();
-                            });
-
-                    });
-            </script>
-        }
-
     </div>
 }

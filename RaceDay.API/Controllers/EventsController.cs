@@ -32,6 +32,7 @@ public class EventsController : ControllerBase
             .OrderBy(e => e.EventDate)
             .ToListAsync();
 
+        // Load organiser names in one query; leave event ownership unchanged.
         var organiserIds = events.Select(e => e.OrganiserId).Distinct().ToList();
         var organisers = await _context.Users
             .AsNoTracking()
@@ -49,22 +50,61 @@ public class EventsController : ControllerBase
             e.DistanceKm,
             e.EventType,
 
-            BannerImageUrl =
-                string.IsNullOrWhiteSpace(e.BannerImageUrl)
-                    ? null
-                    : _blobStorageService.GetEventBannerReadUrl(
-                        e.BannerImageUrl),
+            BannerImageUrl = ResolveBannerUrlSafely(e.BannerImageUrl),
 
             e.OrganiserId,
             CreatedBy = organisers.TryGetValue(e.OrganiserId, out var organiser)
-                ? (string.IsNullOrWhiteSpace($"{organiser.FirstName} {organiser.LastName}".Trim())
+                ? (string.IsNullOrWhiteSpace(($"{organiser.FirstName} {organiser.LastName}").Trim())
                     ? organiser.Email
-                    : $"{organiser.FirstName} {organiser.LastName}".Trim())
+                    : ($"{organiser.FirstName} {organiser.LastName}").Trim())
                 : "Unknown organiser"
         });
 
         return Ok(result);
     }
+
+    // An invalid legacy banner URL must not prevent events from loading.
+    // The stored value is left unchanged for later investigation.
+
+    private string? ResolveBannerUrlSafely(string? storedUrl)
+    {
+        if (string.IsNullOrWhiteSpace(storedUrl))
+            return null;
+
+        if (!Uri.TryCreate(
+                storedUrl.Trim(),
+                UriKind.Absolute,
+                out Uri? uri))
+            return null;
+
+        if (uri.Scheme != Uri.UriSchemeHttps &&
+            uri.Scheme != Uri.UriSchemeHttp)
+            return null;
+
+        // External website images do not need Azure SAS tokens.
+        if (!uri.Host.EndsWith(
+                ".blob.core.windows.net",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return uri.ToString();
+        }
+
+        // Existing Azure-hosted banners still use SAS URLs.
+        try
+        {
+            return _blobStorageService.GetEventBannerReadUrl(
+                storedUrl);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+        catch (UriFormatException)
+        {
+            return null;
+        }
+    }
+
 
     // GET: api/events/mine
     // Returns only events created by the logged-in organiser.
@@ -118,15 +158,7 @@ public class EventsController : ControllerBase
             });
         }
 
-        string? bannerImageUrl = null;
-
-        if (!string.IsNullOrWhiteSpace(
-            existingEvent.BannerImageUrl))
-        {
-            bannerImageUrl =
-                _blobStorageService.GetEventBannerReadUrl(
-                    existingEvent.BannerImageUrl);
-        }
+        string? bannerImageUrl = ResolveBannerUrlSafely(existingEvent.BannerImageUrl);
 
         var eventDetails = new
         {
@@ -215,8 +247,12 @@ public class EventsController : ControllerBase
         existingEvent.Location = updatedEvent.Location.Trim();
         existingEvent.DistanceKm = updatedEvent.DistanceKm;
         existingEvent.EventType = updatedEvent.EventType;
-        // Banner changes are handled by dedicated banner endpoints.
-        // Never persist a temporary SAS read URL from the edit form.
+
+        if (updatedEvent.BannerImageUrl != null)
+        {
+            existingEvent.BannerImageUrl =
+                updatedEvent.BannerImageUrl;
+        }
 
         await _context.SaveChangesAsync();
 
@@ -329,39 +365,6 @@ public class EventsController : ControllerBase
             });
     }
 
-    // PUT: api/events/{id}/banner-url
-    // Change only the banner, leaving event details untouched.
-    [HttpPut("{id:int}/banner-url")]
-    [Authorize(Roles = "Organiser")]
-    public async Task<IActionResult> UpdateEventBannerUrl(int id, [FromBody] BannerUrlRequest request)
-    {
-        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out int organiserId)) return Unauthorized();
-
-        var existingEvent = await _context.Events.FirstOrDefaultAsync(e => e.EventId == id);
-        if (existingEvent == null) return NotFound(new { message = "Event not found." });
-        if (existingEvent.OrganiserId != organiserId) return Forbid();
-
-        string? value = request?.BannerImageUrl?.Trim();
-        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) ||
-            uri.Scheme != Uri.UriSchemeHttps || !string.IsNullOrEmpty(uri.UserInfo))
-            return BadRequest(new { message = "Enter a valid HTTPS image URL." });
-
-        string? oldBanner = existingEvent.BannerImageUrl;
-        existingEvent.BannerImageUrl = uri.ToString();
-        await _context.SaveChangesAsync();
-
-        // The storage service refuses to delete URLs outside our Azure container.
-        if (!string.IsNullOrWhiteSpace(oldBanner) &&
-            !string.Equals(oldBanner, existingEvent.BannerImageUrl, StringComparison.OrdinalIgnoreCase))
-        {
-            try { await _blobStorageService.DeleteImageAsync(oldBanner); }
-            catch { /* Cleanup failure must not undo a successful banner update. */ }
-        }
-
-        return Ok(new { message = "Event banner updated successfully." });
-    }
-
     // POST: api/events/{id}/banner
     // Uploads or replaces a banner image for an event
     // owned by the logged-in organiser.
@@ -464,80 +467,48 @@ public class EventsController : ControllerBase
     }
 
     // DELETE: api/events/{id}/banner
-    // Removes the banner image from an event
-    // owned by the logged-in organiser.
+    // Removes either an external URL banner or an Azure-uploaded banner.
     [HttpDelete("{id:int}/banner")]
     [Authorize(Roles = "Organiser")]
-    public async Task<IActionResult> RemoveEventBanner(
-        int id)
+    public async Task<IActionResult> RemoveEventBanner(int id)
     {
-        var userIdValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier);
-
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!int.TryParse(userIdValue, out var organiserId))
-        {
             return Unauthorized();
-        }
 
         var existingEvent = await _context.Events
             .FirstOrDefaultAsync(e => e.EventId == id);
 
         if (existingEvent == null)
-        {
-            return NotFound(new
-            {
-                message = "Event not found."
-            });
-        }
+            return NotFound(new { message = "Event not found." });
 
         if (existingEvent.OrganiserId != organiserId)
-        {
             return Forbid();
-        }
 
-        if (string.IsNullOrWhiteSpace(
-            existingEvent.BannerImageUrl))
-        {
-            return BadRequest(new
-            {
-                message =
-                    "There is no event banner to remove."
-            });
-        }
+        string? existingBannerUrl = existingEvent.BannerImageUrl;
+        if (string.IsNullOrWhiteSpace(existingBannerUrl))
+            return BadRequest(new { message = "There is no event banner to remove." });
 
-        string existingBannerUrl =
-            existingEvent.BannerImageUrl;
+        // Only images stored in our Azure Blob Storage should be deleted there.
+        // External HTTPS image URLs are references, not Azure blobs.
+        bool isAzureBlob = Uri.TryCreate(existingBannerUrl, UriKind.Absolute, out var uri)
+            && uri.Host.EndsWith(".blob.core.windows.net", StringComparison.OrdinalIgnoreCase);
 
         try
         {
-            await _blobStorageService.DeleteImageAsync(
-                existingBannerUrl);
+            if (isAzureBlob)
+                await _blobStorageService.DeleteImageAsync(existingBannerUrl);
 
             existingEvent.BannerImageUrl = null;
-
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message =
-                    "Event banner removed successfully."
-            });
+            return Ok(new { message = "Event banner removed successfully." });
         }
         catch (Exception)
         {
-            return StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new
-                {
-                    message =
-                        "The event banner could not be removed."
-                });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "The event banner could not be removed." });
         }
     }
-}
 
-// Request contract for replacing a banner with an external URL.
-public sealed class BannerUrlRequest
-{
-    public string? BannerImageUrl { get; set; }
 }

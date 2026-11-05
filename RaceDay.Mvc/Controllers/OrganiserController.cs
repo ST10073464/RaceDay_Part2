@@ -207,105 +207,82 @@ namespace RaceDay.Mvc.Controllers
             if (!IsOrganiser())
                 return RedirectToAction("Login", "Account");
 
-            if (model.BannerImage is { Length: > 0 } image)
+            if (model.BannerImage != null)
             {
-                const long maxSize = 5 * 1024 * 1024;
-                string extension = Path.GetExtension(image.FileName).ToLowerInvariant();
-                if (image.Length > maxSize)
+                if (!string.IsNullOrWhiteSpace(model.BannerImageUrl))
                     ModelState.AddModelError(nameof(model.BannerImage),
-                        "The banner image must be 5 MB or smaller.");
-                if (extension != ".jpg" && extension != ".jpeg" &&
-                    extension != ".png" && extension != ".webp")
-                    ModelState.AddModelError(nameof(model.BannerImage),
-                        "Choose a JPG, PNG, or WebP image.");
-            }
+                        "Choose either an image URL or a computer file, not both.");
 
-            if (!string.IsNullOrWhiteSpace(model.BannerImageUrl))
-            {
-                string url = model.BannerImageUrl.Trim();
-                if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? parsedUrl)
-                    || parsedUrl.Scheme != Uri.UriSchemeHttps
-                    || !string.IsNullOrEmpty(parsedUrl.UserInfo))
-                {
-                    ModelState.AddModelError(nameof(model.BannerImageUrl),
-                        "Enter a valid HTTPS image URL.");
-                }
-                else
-                {
-                    model.BannerImageUrl = parsedUrl.ToString();
-                }
-
-                if (model.BannerImage is { Length: > 0 })
+                string extension = Path.GetExtension(model.BannerImage.FileName).ToLowerInvariant();
+                if (model.BannerImage.Length == 0 ||
+                    model.BannerImage.Length > 5 * 1024 * 1024 ||
+                    !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension))
                     ModelState.AddModelError(nameof(model.BannerImage),
-                        "Choose either an image URL or a file upload, not both.");
+                        "Select a JPG, JPEG, PNG or WEBP image of 5 MB or less.");
             }
 
             if (!ModelState.IsValid)
                 return View(model);
 
-            int eventId;
             try
             {
-                using HttpResponseMessage response =
-                    await _apiClient.CreateEventAsync(model);
-
+                using var response = await _apiClient.CreateEventAsync(model);
                 if (!response.IsSuccessStatusCode)
                 {
                     string message = await response.Content.ReadAsStringAsync();
                     ModelState.AddModelError(string.Empty,
-                        GetApiErrorMessage(message, "The event could not be created."));
+                        string.IsNullOrWhiteSpace(message)
+                            ? "The event could not be created."
+                            : message);
                     return View(model);
                 }
 
-                // The API responds with JSON containing eventId.
-                string json = await response.Content.ReadAsStringAsync();
-                using var document = System.Text.Json.JsonDocument.Parse(json);
-                if (!document.RootElement.TryGetProperty("eventId", out var idElement) ||
-                    !idElement.TryGetInt32(out eventId) || eventId <= 0)
+                if (model.BannerImage != null)
                 {
-                    TempData["ErrorMessage"] =
-                        "Event created, but its ID could not be read. Open My Events to manage it.";
-                    return RedirectToAction(nameof(MyEvents));
+                    // The API's POST /api/events returns { eventId: ... }.
+                    string json = await response.Content.ReadAsStringAsync();
+                    using var document = System.Text.Json.JsonDocument.Parse(json);
+                    if (!document.RootElement.TryGetProperty("eventId", out var idElement) ||
+                        !idElement.TryGetInt32(out int eventId) || eventId <= 0)
+                    {
+                        TempData["SuccessMessage"] =
+                            "Event created, but its ID could not be read. Upload the banner from Edit Event.";
+                        return RedirectToAction(nameof(MyEvents));
+                    }
+
+                    try
+                    {
+                        using var uploadResponse = await _apiClient.UploadEventBannerAsync(
+                            eventId, model.BannerImage);
+                        if (!uploadResponse.IsSuccessStatusCode)
+                        {
+                            _logger.LogWarning("Banner upload failed for event {EventId}: {Status}",
+                                eventId, uploadResponse.StatusCode);
+                            TempData["SuccessMessage"] =
+                                "Event created, but the banner upload failed. Open Edit Event to retry.";
+                            return RedirectToAction(nameof(MyEvents));
+                        }
+                    }
+                    catch (Exception uploadException)
+                    {
+                        _logger.LogError(uploadException,
+                            "Banner upload failed after creating event {EventId}", eventId);
+                        TempData["SuccessMessage"] =
+                            "Event created, but the banner upload failed. Open Edit Event to retry.";
+                        return RedirectToAction(nameof(MyEvents));
+                    }
                 }
+
+                TempData["SuccessMessage"] = "Event created successfully.";
+                return RedirectToAction(nameof(MyEvents));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unable to create organiser event.");
                 ModelState.AddModelError(string.Empty,
-                    "The event could not be created at this time. Check My Events before retrying.");
+                    "The event could not be created at this time.");
                 return View(model);
             }
-
-            if (model.BannerImage is { Length: > 0 } bannerImage)
-            {
-                try
-                {
-                    // The API also checks that this organiser owns the new event.
-                    using HttpResponseMessage uploadResponse =
-                        await _apiClient.UploadEventBannerAsync(eventId, bannerImage);
-                    if (!uploadResponse.IsSuccessStatusCode)
-                    {
-                        _logger.LogWarning(
-                            "Banner upload failed for event {EventId}: {StatusCode}",
-                            eventId, uploadResponse.StatusCode);
-                        TempData["ErrorMessage"] =
-                            "Event created, but the banner upload failed. Try uploading it again below.";
-                        return RedirectToAction(nameof(EditEvent), new { id = eventId });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Banner upload failed for event {EventId}.", eventId);
-                    TempData["ErrorMessage"] =
-                        "Event created, but the banner upload failed. Try uploading it again below.";
-                    return RedirectToAction(nameof(EditEvent), new { id = eventId });
-                }
-            }
-
-            TempData["SuccessMessage"] = model.BannerImage is { Length: > 0 }
-                ? "Event created and banner uploaded successfully."
-                : "Event created successfully.";
-            return RedirectToAction(nameof(EditEvent), new { id = eventId });
         }
 
         // ORGANISER - EDIT EVENT
@@ -1162,72 +1139,6 @@ namespace RaceDay.Mvc.Controllers
         }
 
         // ---------------------------------------------------------
-        // SAVE EVENT BANNER FROM URL OR FILE
-        // ---------------------------------------------------------
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SaveEventBanner(
-            int eventId, string? bannerImageUrl, IFormFile? bannerImage)
-        {
-            if (!IsOrganiser())
-                return RedirectToAction("Login", "Account");
-
-            if (!await OwnsEventAsync(eventId))
-                return NotFound();
-
-            bool hasUrl = !string.IsNullOrWhiteSpace(bannerImageUrl);
-            bool hasFile = bannerImage is { Length: > 0 };
-            if (hasUrl == hasFile)
-            {
-                TempData["ErrorMessage"] = "Choose either an image URL or a file upload.";
-                return RedirectToAction(nameof(EditEvent), new { id = eventId });
-            }
-
-            if (hasFile)
-            {
-                const long maxBytes = 5 * 1024 * 1024;
-                string extension = Path.GetExtension(bannerImage!.FileName).ToLowerInvariant();
-                if (bannerImage.Length > maxBytes ||
-                    (extension != ".jpg" && extension != ".jpeg" &&
-                     extension != ".png" && extension != ".webp"))
-                {
-                    TempData["ErrorMessage"] = "Select a JPG, PNG or WebP image smaller than 5 MB.";
-                    return RedirectToAction(nameof(EditEvent), new { id = eventId });
-                }
-            }
-            else if (!Uri.TryCreate(bannerImageUrl!.Trim(), UriKind.Absolute, out Uri? uri) ||
-                     uri.Scheme != Uri.UriSchemeHttps ||
-                     !string.IsNullOrEmpty(uri.UserInfo))
-            {
-                TempData["ErrorMessage"] = "Enter a valid HTTPS image URL.";
-                return RedirectToAction(nameof(EditEvent), new { id = eventId });
-            }
-
-            try
-            {
-                using HttpResponseMessage response = hasFile
-                    ? await _apiClient.UploadEventBannerAsync(eventId, bannerImage!)
-                    : await _apiClient.SaveEventBannerUrlAsync(eventId, bannerImageUrl!.Trim());
-
-                if (response.IsSuccessStatusCode)
-                    TempData["SuccessMessage"] = "Event banner updated successfully.";
-                else
-                {
-                    string error = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("Banner update failed for {EventId}: {Error}", eventId, error);
-                    TempData["ErrorMessage"] = GetApiErrorMessage(error, "Event banner could not be updated.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Banner update failed for event {EventId}", eventId);
-                TempData["ErrorMessage"] = "Event banner could not be updated.";
-            }
-
-            return RedirectToAction(nameof(EditEvent), new { id = eventId });
-        }
-
-        // ---------------------------------------------------------
         // UPLOAD EVENT BANNER
         // ---------------------------------------------------------
 
@@ -1308,6 +1219,84 @@ namespace RaceDay.Mvc.Controllers
                 new { id = eventId });
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetEventBannerUrl(
+            int eventId,
+            string bannerUrl)
+        {
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
+            if (!Uri.TryCreate(
+                    bannerUrl?.Trim(),
+                    UriKind.Absolute,
+                    out var uri) ||
+                uri.Scheme != Uri.UriSchemeHttps)
+            {
+                TempData["ErrorMessage"] =
+                    "Enter a valid HTTPS image URL.";
+
+                return RedirectToAction(
+                    nameof(EditEvent),
+                    new { id = eventId });
+            }
+
+            try
+            {
+                var existingEvent =
+                    await _apiClient.GetEventByIdAsync(eventId);
+
+                if (existingEvent == null)
+                    return NotFound();
+
+                var model = new EditEventViewModel
+                {
+                    EventId = existingEvent.EventId,
+                    EventName = existingEvent.EventName,
+                    Description = existingEvent.Description,
+                    EventDate = existingEvent.EventDate,
+                    Location = existingEvent.Location,
+                    DistanceKm = existingEvent.DistanceKm,
+                    EventType = existingEvent.EventType,
+                    BannerImageUrl = uri.ToString()
+                };
+
+                using var response =
+                    await _apiClient.UpdateEventAsync(eventId, model);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Event banner URL saved successfully.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] =
+                        "The banner URL could not be saved.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to save banner URL for event {EventId}.",
+                    eventId);
+
+                TempData["ErrorMessage"] =
+                    "An error occurred while saving the banner URL.";
+            }
+
+            return RedirectToAction(
+                nameof(EditEvent),
+                new { id = eventId });
+        }
+
+
         // ---------------------------------------------------------
         // REMOVE EVENT BANNER
         // ---------------------------------------------------------
@@ -1377,4 +1366,3 @@ namespace RaceDay.Mvc.Controllers
         }
     }
 }
-

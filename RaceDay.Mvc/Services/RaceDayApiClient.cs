@@ -150,10 +150,10 @@ public class RaceDayApiClient
         return events ?? new List<EventViewModel>();
     }
     public async Task<HttpResponseMessage> CreateEventAsync(
-        CreateEventViewModel model)
+    CreateEventViewModel model)
     {
-        // Do not JSON-serialize IFormFile; upload it separately as multipart data.
-        var eventData = new
+        // Send event fields only; IFormFile must not be serialized into JSON.
+        var payload = new
         {
             model.EventName,
             model.Description,
@@ -164,7 +164,10 @@ public class RaceDayApiClient
             model.BannerImageUrl
         };
 
-        return await SendAsync(HttpMethod.Post, "api/events", eventData);
+        return await SendAsync(
+            HttpMethod.Post,
+            "api/events",
+            payload);
     }
 
     // ---------------------------------------------------------
@@ -542,13 +545,6 @@ public class RaceDayApiClient
         request.Content = content;
 
         return await _client.SendAsync(request);
-    }
-
-    // Replace the banner using an external HTTPS image URL.
-    public Task<HttpResponseMessage> SaveEventBannerUrlAsync(int eventId, string bannerImageUrl)
-    {
-        return SendAsync(HttpMethod.Put, $"api/events/{eventId}/banner-url",
-            new { BannerImageUrl = bannerImageUrl });
     }
 
     // ---------------------------------------------------------
