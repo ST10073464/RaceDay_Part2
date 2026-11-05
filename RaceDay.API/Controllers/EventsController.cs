@@ -32,6 +32,13 @@ public class EventsController : ControllerBase
             .OrderBy(e => e.EventDate)
             .ToListAsync();
 
+        var organiserIds = events.Select(e => e.OrganiserId).Distinct().ToList();
+        var organisers = await _context.Users
+            .AsNoTracking()
+            .Where(u => organiserIds.Contains(u.UserId))
+            .Select(u => new { u.UserId, u.FirstName, u.LastName, u.Email })
+            .ToDictionaryAsync(u => u.UserId);
+
         var result = events.Select(e => new
         {
             e.EventId,
@@ -48,7 +55,12 @@ public class EventsController : ControllerBase
                     : _blobStorageService.GetEventBannerReadUrl(
                         e.BannerImageUrl),
 
-            e.OrganiserId
+            e.OrganiserId,
+            CreatedBy = organisers.TryGetValue(e.OrganiserId, out var organiser)
+                ? (string.IsNullOrWhiteSpace($"{organiser.FirstName} {organiser.LastName}".Trim())
+                    ? organiser.Email
+                    : $"{organiser.FirstName} {organiser.LastName}".Trim())
+                : "Unknown organiser"
         });
 
         return Ok(result);
