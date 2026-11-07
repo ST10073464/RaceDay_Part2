@@ -25,6 +25,7 @@ public class EventsController : ControllerBase
 
     // GET: api/events
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetEvents()
     {
         var events = await _context.Events
@@ -143,6 +144,7 @@ public class EventsController : ControllerBase
 
     // GET: api/events/{id}
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetEventById(int id)
     {
         var existingEvent = await _context.Events

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Mvc;
 using RaceDay.Contracts.Auth;
 using RaceDay.Mvc.Services;
 using System.Text.Json;
@@ -15,19 +16,29 @@ namespace RaceDay.Mvc.Controllers
         }
 
         // -------------------------------------------------
-        // REGISTER
+        // REGISTER - GET
         // -------------------------------------------------
 
         [HttpGet]
-        public IActionResult Register()
+        public IActionResult Register(int? eventId = null)
         {
+            ViewBag.EventId = eventId > 0 ? eventId : null;
+
             return View(new RegisterRequest());
         }
 
+        // -------------------------------------------------
+        // REGISTER - POST
+        // -------------------------------------------------
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterRequest model)
+        public async Task<IActionResult> Register(
+            RegisterRequest model,
+            int? eventId = null)
         {
+            ViewBag.EventId = eventId > 0 ? eventId : null;
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -45,7 +56,18 @@ namespace RaceDay.Mvc.Controllers
                     TempData["SuccessMessage"] =
                         "Registration successful. You can now log in.";
 
-                    return RedirectToAction(nameof(Login));
+                    // If registration started from an event,
+                    // continue to Login with the same event ID.
+                    if (eventId > 0)
+                    {
+                        return RedirectToAction(
+                            "Login",
+                            "Account",
+                            new { eventId });
+                    }
+
+                    // Normal registration returns to landing page.
+                    return RedirectToAction("Index", "Home");
                 }
 
                 string message = await ReadApiMessageAsync(response);
@@ -65,19 +87,29 @@ namespace RaceDay.Mvc.Controllers
         }
 
         // -------------------------------------------------
-        // LOGIN
+        // LOGIN - GET
         // -------------------------------------------------
 
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login(int? eventId = null)
         {
+            ViewBag.EventId = eventId > 0 ? eventId : null;
+
             return View(new LoginRequest());
         }
 
+        // -------------------------------------------------
+        // LOGIN - POST
+        // -------------------------------------------------
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginRequest model)
+        public async Task<IActionResult> Login(
+            LoginRequest model,
+            int? eventId = null)
         {
+            ViewBag.EventId = eventId > 0 ? eventId : null;
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -99,7 +131,7 @@ namespace RaceDay.Mvc.Controllers
                     return View(model);
                 }
 
-                // Capture the authentication cookie returned by RaceDay.API.
+                // Capture authentication cookie returned by API.
                 if (response.Headers.TryGetValues(
                     "Set-Cookie",
                     out var cookieHeaders))
@@ -126,45 +158,66 @@ namespace RaceDay.Mvc.Controllers
 
                 JsonElement root = document.RootElement;
 
-                if (root.TryGetProperty("userId", out JsonElement userId))
+                if (root.TryGetProperty(
+                    "userId",
+                    out JsonElement userId))
                 {
                     HttpContext.Session.SetString(
                         "UserId",
                         userId.ToString());
                 }
 
-                if (root.TryGetProperty("email", out JsonElement email))
+                if (root.TryGetProperty(
+                    "email",
+                    out JsonElement email))
                 {
                     HttpContext.Session.SetString(
                         "Email",
                         email.GetString() ?? string.Empty);
                 }
 
-                if (root.TryGetProperty("role", out JsonElement role))
+                string userRole = string.Empty;
+
+                if (root.TryGetProperty(
+                    "role",
+                    out JsonElement role))
                 {
+                    userRole = role.GetString() ?? string.Empty;
+
                     HttpContext.Session.SetString(
                         "Role",
-                        role.GetString() ?? string.Empty);
+                        userRole);
                 }
 
                 TempData["SuccessMessage"] =
                     "Login successful.";
 
+                // Organisers always go to their dashboard.
                 if (string.Equals(
-                     role.GetString(),
-                     "Organiser",
-                     StringComparison.OrdinalIgnoreCase))
+                    userRole,
+                    "Organiser",
+                    StringComparison.OrdinalIgnoreCase))
                 {
                     return RedirectToAction(
                         "Index",
                         "Organiser");
                 }
 
-                return RedirectToAction(
-                    "Index",
-                    "Home");
+                // Participants return to their selected event.
+                if (string.Equals(
+                    userRole,
+                    "Participant",
+                    StringComparison.OrdinalIgnoreCase)
+                    && eventId > 0)
+                {
+                    return RedirectToAction(
+                        "EventDetails",
+                        "Home",
+                        new { id = eventId.Value });
+                }
 
-
+                // Normal login goes to participant dashboard.
+                return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
@@ -201,8 +254,8 @@ namespace RaceDay.Mvc.Controllers
             TempData["SuccessMessage"] =
                 "You have been logged out.";
 
-            return RedirectToAction(
-                nameof(Login));
+            // Always return to public RaceDay landing page.
+            return RedirectToAction("Index", "Home");
         }
 
         // -------------------------------------------------

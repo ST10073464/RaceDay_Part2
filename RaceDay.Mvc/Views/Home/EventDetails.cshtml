@@ -144,6 +144,7 @@
 
                 bool isAgeEligible =
                     hasAge &&
+                    participantAge >= 16 &&
                     participantAge >= category.MinAge &&
                     participantAge <= category.MaxAge;
 

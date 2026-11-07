@@ -1,0 +1,629 @@
+Document control       Details
+                       RaceDay Portfolio of Evidence
+ Item                  1.0 – report draft based on verified project
+ Document              demonstrations
+ Version               Project development history, command output
+                       and screenshots supplied by the developer
+ Evidence basis        https://github.com/ST10073464/RaceDay_Part2
+                       erwin19851118/raceday-api:latest;
+ Repository            erwin19851118/raceday-mvc:latest
+ Docker images         Final presentation video, assessment-specific
+                       requirements, selected annotated screenshots
+ Outstanding evidence
+
+Executive summary
+
+RaceDay is a role-based event management and results tracking application
+developed with ASP.NET Core and .NET 8. It combines a RESTful Web API, an
+ASP.NET Core MVC web client, a SQL Server relational database, and Azure Blob
+Storage for event banners and profile pictures. The platform serves two user groups:
+participants, who discover events, enrol and view their results; and organisers, who
+create and administer events, categories, participants and results.
+
+The solution demonstrates separation of concerns through API, MVC, shared
+contracts and automated test projects. Authentication and authorisation restrict
+functionality by role and event ownership. Entity Framework Core supports relational
+persistence, while GitHub Actions provides continuous integration. The final API and
+MVC images were built with Docker, tested locally and pushed to Docker Hub on 6
+November 2026.
+
+Evidence reviewed for this report includes a successful HTTP 200 response from the
+containerised events API; successful participant and organiser logins and working
+dashboards; a passing Release build and four passing unit tests; successful GitHub
+Actions execution; and successful Docker Hub image publication. This report
+documents implemented functionality and limitations without presenting the system
+as publicly hosted or the pending demonstration video as completed.
+Table of Contents
+
+Document control
+Executive summary
+1. Introduction and problem statement ..................................................................... 1
+
+   1.1 Background ................................................................................................................. 1
+   1.2 Problem statement ...................................................................................................... 1
+   1.3 Proposed solution ........................................................................................................ 1
+2. Project aims, objectives and scope........................................................................ 1
+   2.1 Aim .............................................................................................................................. 1
+   2.2 Measurable objectives ................................................................................................. 1
+   2.3 Project scope............................................................................................................... 2
+3. Requirements analysis ......................................................................................... 2
+   3.1 Functional requirements .............................................................................................. 2
+   3.2 non-functional requirements ........................................................................................ 2
+   3.3 Actors and use cases .................................................................................................. 2
+4. Technology stack and development environment.................................................... 3
+5. System architecture and design............................................................................. 3
+   5.1 Architectural overview.................................................................................................. 3
+   5.2 Solution projects .......................................................................................................... 3
+   5.3 Design considerations ................................................................................................. 4
+6. Database design and data management ................................................................ 4
+   6.1 Database ..................................................................................................................... 4
+   6.2 Principal entities .......................................................................................................... 4
+   6.3 Data integrity ............................................................................................................... 4
+   6.4 Container database access ......................................................................................... 4
+7. Application implementation .................................................................................. 5
+   7.1 Participant functionality................................................................................................ 5
+   7.2 Organiser functionality ................................................................................................. 5
+   7.3 Event and category management ................................................................................ 5
+   7.4 Results tracking ........................................................................................................... 5
+8. Security and access control .................................................................................. 6
+   8.1 Authentication and authorisation.................................................................................. 6
+   8.2 Secrets and configuration ............................................................................................ 6
+   8.3 Deployment considerations ......................................................................................... 6
+9. Azure Blob Storage integration............................................................................... 6
+10. API design and integration ................................................................................... 7
+
+   10.1 Endpoint groups ........................................................................................................ 7
+   10.2 HTTP conventions ..................................................................................................... 7
+   10.3 MVC API client .......................................................................................................... 7
+11. Testing and veriﬁcation........................................................................................ 8
+   11.1 Testing approach....................................................................................................... 8
+   11.2 Automated tests......................................................................................................... 8
+   11.3 Functional verification register ................................................................................... 8
+   11.4 Evidence boundaries ................................................................................................. 8
+12. GitHub version control and continuous integration ............................................... 9
+13. Docker containerisation and deployment ............................................................. 9
+   13.1 Docker images........................................................................................................... 9
+   13.2 Build process ............................................................................................................. 9
+   13.3 Runtime testing and troubleshooting........................................................................ 10
+   13.4 Deployment status ................................................................................................... 10
+14. Challenges, solutions and lessons learned......................................................... 10
+15. Evaluation against objectives ............................................................................ 11
+16. Conclusion and recommendations .................................................................... 11
+17. References....................................................................................................... 12
+18. Appendices and evidence register ..................................................................... 13
+   Appendix A – Using Docker images ................................................................................ 13
+   Appendix B – Demonstration configuration (non-secret) .................................................. 16
+   Appendix C – Submission readiness ............................................................................... 16
+1. Introduction and problem statement
+
+1.1 Background
+Running, walking and cycling events require reliable administration of event details,
+registrations, participant records and finishing results. Managing these activities
+through disconnected spreadsheets, messages or manual processes can introduce
+duplicated entries, inconsistent data and delayed reporting. A web-based solution
+offers a central place for organisers to manage events and for participants to interact
+with them.
+
+1.2 Problem statement
+The project addresses the need for a structured event management platform in
+which participants can discover and enrol in events, organisers can control their own
+event records, and race results can be recorded and retrieved securely. It must
+support role-based access, persistent data, clear navigation and a maintainable
+technical design.
+
+1.3 Proposed solution
+RaceDay uses an ASP.NET Core MVC user interface that communicates with an
+ASP.NET Core REST API. The API applies application rules and uses Entity
+Framework Core to access a SQL Server database. Azure Blob Storage stores
+uploaded images. The architecture enables independent development and
+deployment of the API and web client.
+
+2. Project aims, objectives and scope
+
+2.1 Aim
+To design, implement and verify a functional web-based event management system
+for participants and organisers, demonstrating contemporary software engineering
+practices across the application lifecycle.
+
+2.2 Measurable objectives
+
+ Provide registration, login and logout with Participant and Organizer roles.
+ Enable organizers to create, edit, view and manage events they own.
+ Allow organizers to define event categories and review enrolments and results.
+ Enable participants to browse events, enroll and view their own enrolments and results.
+ Persist application data using SQL Server and Entity Framework Core.
+ Support profile images and event banners through Azure Blob Storage.
+ Expose functionality through documented REST endpoints and a separate MVC client.
+ Verify critical behavior with unit tests, manual workflows and GitHub Actions.
+ Package the API and MVC applications as Docker images and publish the tested images to
+
+     Docker Hub.
+
+                                                                                                                1
+2.3 Project scope
+
+The delivered scope includes event discovery, organiser event administration,
+category management, enrolment, result tracking, user profiles, image upload and
+presentation, and automated build/test verification. It also includes local container
+testing and Docker Hub publication. A public cloud-hosted RaceDay website,
+payment gateway, ticket scanning, accommodation booking and other features
+discussed for a separate future event platform are not claimed as part of this POE.
+
+3. Requirements analysis
+
+3.1 Functional requirements
+
+ID    Requirement                    Implemented evidence
+                                     Registration/login flows and role-specific
+FR01 Account registration and login  dashboards
+                                     Participant and Organiser access
+FR02 Role-based authorisation        separation
+                                     Create, edit, manage and view own events
+FR03  Organiser event management     Read-only All Events with Created By
+FR04  Cross-organiser event listing  Create/view/delete event categories
+FR05  Category management            Enrol, list own enrolments, cancellation UI
+FR06  Participant enrolment          Organiser event results; participant My
+FR07  Results management             Results and position
+                                     View/update profile and upload picture
+FR08 Profile management              Image upload or HTTPS URL,
+FR09 Event banner management         replace/remove
+                                     MVC client consumes REST API
+FR10 API integration
+
+3.2 non-functional requirements
+
+ Usability: clear navigation, dashboards, status labels and actionable forms for each role.
+ Maintainability: distinct API, MVC, contracts and test projects with controller/service separation.
+ Security: password hashing, authentication, role restrictions, ownership checks and secret
+
+     configuration outside published images.
+ Reliability: relational data constraints, validation, controlled HTTP responses and regression tests.
+ Portability: Docker images for consistent .NET 8 application packaging.
+ Traceability: source history and automated GitHub Actions build/test results.
+
+3.3 Actors and use cases
+
+Actor        Primary use cases
+Visitor      View landing page; register; log in
+Participant  Browse events; view event details; enrol; view/cancel enrolments;
+             view results; maintain profile
+Organiser    Create/edit events; manage banners and categories; inspect
+             participants and results; view all events read-only
+
+                                                                                       2
+4. Technology stack and development environment
+
+Layer              Technology                        Purpose
+Backend            C# / ASP.NET Core Web API / .NET  REST endpoints and application
+                   8                                 rules
+Frontend           ASP.NET Core MVC / Razor / HTML   Browser interface
+                   / CSS / JavaScript
+Contracts          Shared DTO project                Data exchange between API and
+                                                     client
+Persistence        SQL Server and Entity Framework   Relational storage and ORM
+                   Core 8
+Object storage     Azure Blob Storage                Private image containers and
+                                                     SAS-based access
+Testing            xUnit                             Automated unit tests
+Version control    Git and GitHub                    Repository and POE branch
+Automation         GitHub Actions                    Continuous integration
+Containerisation   Docker Desktop / Docker Hub       Build, local runtime and image
+                                                     distribution
+Development tools  Visual Studio 2022; PowerShell;   Implementation and verification
+                   SQL Server tooling
+
+Local development used an API endpoint at https://localhost:7008 and an MVC
+endpoint at http://localhost:5251. The verified container deployment exposed the API
+at http://localhost:7009 and the MVC client at http://localhost:7010. These are local
+addresses and not public hosting endpoints.
+
+5. System architecture and design
+
+5.1 Architectural overview
+
+The solution separates presentation, application interfaces, shared contracts and
+data access. A browser sends requests to the MVC application. MVC controllers use
+an HTTP client service to call the RaceDay REST API. The API validates the
+request, enforces access controls and interacts with SQL Server via Entity
+Framework Core. The API also accesses Azure Blob Storage for media operations.
+
+Browser → RaceDay.Mvc (Razor UI and controllers) → RaceDay.API (REST
+controllers and services) → SQL Server / Azure Blob Storage
+
+       5.2 Solution projects  Responsibility
+                              HTTP endpoints, application logic, persistence integration and
+Project                       media services
+RaceDay.API                   User interface, session and API client integration
+                              Shared request/response models and DTOs
+RaceDay.Mvc                   Automated controller-level verification
+RaceDay.Contracts
+RaceDay.Api.Tests
+
+                                                                      3
+5.3 Design considerations
+
+A layered design limits direct database access from the MVC frontend. Shared DTOs
+reduce inconsistencies between the frontend and API. Organiser ownership rules
+ensure that users can manage their own events while retaining a read-only overview
+of events created by others. The application uses responsive browser layouts,
+though a complete device-by-device accessibility audit is not documented here.
+
+6. Database design and data management
+
+6.1 Database
+
+The implemented SQL Server database is RaceDayDB_Part2. The developer
+confirmed that it was online and accessible using SQL tooling. The database was
+developed using an Entity Framework Core code-first workflow and migrations.
+
+6.2 Principal entities  Purpose                      Key relationship
+ Entity                 Role definitions             Referenced by Users
+ Roles                  Participant and Organiser    References Roles;
+ Users                  accounts                     associated with events
+                                                     and enrolments
+ Events                 Event details and            Created by an organiser;
+ Categories             ownership                    has categories
+ Enrolments             Event registration           Belongs to an event
+ Results                categories
+                        Participant registration in  References participant
+                        a category/event             and event/category
+                        Finishing data and           Associated with
+                        position                     event/participant
+
+6.3 Data integrity
+
+Entity Framework Core maps domain entities to database tables and relationships.
+The application has been tested for duplicate enrolment behaviour, returning HTTP
+409 Conflict for relevant duplicate requests during earlier development. Database
+constraints and API validation complement each other; however, this report does not
+reproduce a full SQL schema or assert unverified column definitions.
+
+6.4 Container database access
+
+The SQL Server instance was running on the Windows host and listening on TCP
+port 1433. A dedicated SQL login, raceday_docker, was created with permissions on
+RaceDayDB_Part2 and tested successfully. Docker containers cannot assume that
+Windows integrated authentication or the host name localhost will reach the host
+database. The containerised API therefore required an explicit SQL-authentication
+connection string supplied at runtime. The final API returned HTTP 200 after the
+connection was configured.
+
+                                                                                                                4
+7. Application implementation
+
+7.1 Participant functionality
+Participants can sign in and reach a dedicated dashboard that shows available
+events and account information. Event cards display event type, date, location,
+distance and a link to further details. Participants can enrol in event categories and
+view a My Enrolments page with category, enrolment date and status. The UI also
+provides a cancellation action. A My Results page displays recorded results,
+including finishing position, and a profile area supports account details and picture
+uploads.
+
+In the container test, a participant successfully logged in at localhost:7010. The
+dashboard showed eight available events. The My Enrolments screenshot displayed
+four confirmed enrolments. These values describe the test database at the time of
+capture, not a permanent system total.
+
+7.2 Organiser functionality
+Organisers have a separate dashboard with summary metrics, an event summary
+table and links to My Events, Create Event and participant management. My Events
+displays events belonging to the signed-in organiser, with a Manage Event action.
+The All Events view lists events created by all organisers but is explicitly read-only
+and includes a Created By column. This preserves visibility without granting editing
+rights to another organiser’s records.
+
+The verified organiser dashboard showed four events, four upcoming events and six
+enrolments for the signed-in organiser. The All Events screenshot listed eight events
+across two organisers. These values are demonstration data rather than fixed
+system capacities.
+
+7.3 Event and category management
+Organisers can create and edit events with name, description, date, location,
+distance and event type. The interface supports event banners from uploaded files or
+HTTPS image URLs, including preview, replacement and removal actions. Category
+management supports event-specific categories used during enrolment.
+
+7.4 Results tracking
+Organisers can record and review event results, including finish time and finishing
+position. Participants can view their own results through the MVC application. During
+development, a mapping issue prevented position from appearing in the participant
+view; this was addressed by adding the position to the relevant result view model.
+
+                                                                                                                5
+8. Security and access control
+
+8.1 Authentication and authorisation
+The system implements registration and login flows, password hashing, role-based
+access and ownership restrictions. Participant and Organiser routes expose different
+functionality. Protected API endpoints were exercised during development, including
+successful authenticated requests and rejected requests for conflicting or
+unauthorised actions.
+
+8.2 Secrets and configuration
+Azure storage credentials and database credentials must not be embedded in
+source code, committed to Git or baked into published Docker images. During
+verification, the Azure storage connection string was present in local .NET user-
+secrets but not in the container runtime; this initially caused HTTP 500 responses.
+The required configuration was supplied to the container at runtime, after which the
+next failure exposed the separate database connection requirement. Both
+configuration issues were addressed without changing the published application
+feature set.
+
+8.3 Deployment considerations
+The ASP.NET Core Data Protection logs warned that keys inside the container may
+not persist when it is destroyed. This is acceptable as a development warning but
+should be addressed for long-lived production deployments by persisting and
+protecting the key ring. Production deployment would also require TLS termination,
+managed secrets, least-privilege database permissions, durable storage and
+operational monitoring.
+
+9. Azure Blob Storage integration
+
+The API contains a BlobStorageService that reads AzureStorage:ConnectionString
+from configuration and uses separate containers for profile pictures and event
+banners. The project uses private blobs and SAS URLs to allow controlled image
+retrieval. Profile uploads and event banner operations were implemented and tested
+during development.
+
+The service is configured through AzureStorage:ProfilePicturesContainer and
+AzureStorage:EventBannersContainer, with project defaults of profile-pictures and
+event-banners. The developer verified that all three AzureStorage settings existed in
+local user-secrets. The runtime configuration issue discovered in Docker reinforced
+the distinction between a development secret store and the environment variables
+available inside a container.
+
+                                                                                                                6
+10. API design and integration
+
+10.1 Endpoint groups            Representative operations
+ Area                           Register, login, logout, current-user
+ Authentication                 identity
+                                Get/update profile; upload profile picture
+ Profiles                       List/get event; create, update, delete;
+ Events                         banner operations
+                                Get event categories; create and delete
+ Categories                     Create enrolment; get own enrolments;
+ Enrolments                     get event enrolments
+                                Create result; get own results; get event
+ Results                        results
+
+10.2 HTTP conventions
+
+The API uses standard HTTP verbs to expose operations and status codes to
+indicate results. Verified development examples include HTTP 200 for successful
+requests, HTTP 201 for creation and HTTP 409 for duplicate or conflicting
+operations. Swagger was used to inspect and test endpoints during development.
+The final Docker API verification called GET http://localhost:7009/api/events and
+received HTTP 200.
+
+10.3 MVC API client
+
+The MVC application registers a typed HTTP client, RaceDayApiClient. Its base
+address is read from ApiSettings:BaseUrl, with a local fallback in Program.cs. In a
+container environment, the base URL must point to the reachable API address rather
+than an inaccessible localhost endpoint inside the MVC container. The successful
+role-based MVC demonstrations indicate that the client-to-API connection was
+working during the local container test.
+
+                                                                            7
+11. Testing and verification
+
+11.1 Testing approach
+
+Verification combined automated unit tests, local Release builds, API requests,
+browser-based role walkthroughs, SQL connection checks, GitHub Actions execution
+and Docker runtime checks. This provides evidence across individual components
+and integrated user journeys, though it does not replace a formal performance or
+penetration test.
+
+11.2 Automated tests
+
+The RaceDay.Api.Tests project uses xUnit. The most recent reported Release run
+passed four tests with zero failures: two category-controller tests and two events-
+controller tests. GitHub Actions also completed successfully on the POE branch. Test
+names and full console output should be attached from the repository or the final
+build log if the rubric requires line-by-line test evidence.
+
+11.3 Functional verification register
+
+Test                             Observed outcome                            Result
+API GET /api/events in Docker    HTTP 200; response received                 Pass
+Participant login in Docker MVC  Login successful; dashboard rendered        Pass
+Participant enrolments view      Confirmed enrolments displayed              Pass
+Organiser login in Docker MVC    Login successful; dashboard rendered        Pass
+Organiser My Events              Owned events and management links           Pass
+                                 displayed
+Organiser All Events             Cross-organiser read-only list and creator  Pass
+                                 names
+Docker API image build           Build completed; image tagged               Pass
+Docker MVC image build           Build completed; image tagged               Pass
+Docker Hub push: API             latest image published                      Pass
+Docker Hub push: MVC             latest image published                      Pass
+Unit tests                       4 passed, 0 failed (reported)               Pass
+GitHub Actions CI                Final reported workflow #53 green           Pass
+
+11.4 Evidence boundaries
+
+The screenshots verify displayed screens and selected operations, not every
+possible edge case. No load-test measurements, accessibility audit score,
+vulnerability scan, production uptime data or public hosting test were supplied.
+These are not represented as completed tests.
+
+                                                                                  8
+12. GitHub version control and continuous integration
+
+Git was used to track the project, and GitHub hosts the RaceDay_Part2 repository.
+The final project work was maintained on the POE branch, keeping master
+unchanged. The reported finalisation commit was e7ba8cb. GitHub Actions workflow
+#53 passed after the final push, providing automated evidence that the repository
+version builds and tests successfully.
+
+The developer maintained a separate Git working copy for the final push and verified
+a clean working tree before container builds. Generated files and sensitive
+configuration were excluded from the Docker build context. The repository history, CI
+execution and Docker images together provide traceable evidence of the delivered
+solution.
+
+13. Docker containerisation and deployment
+
+13.1 Docker images
+
+Image        Docker Hub repository                               Evidence
+RaceDay API  https://hub.docker.com/r/erwin19851118/raceday-api  Build and push
+                                                                 succeeded; latest digest
+RaceDay MVC https://hub.docker.com/r/erwin19851118/raceday-mvc   begins 5e19bc0b
+                                                                 Build and push
+                                                                 succeeded; latest digest
+                                                                 begins 7accfd140
+
+13.2 Build process
+
+Both applications were packaged using .NET 8 multi-stage Dockerfiles. The build
+stage restored project dependencies and published Release output; the runtime
+stage used the ASP.NET Core 8 image to run the application. Docker image
+inspection showed port 8080 exposed for the API and ports 8080 and 8081 for the
+MVC image. Images were built from the solution root and tagged under the
+developer’s Docker Hub account.
+
+                                                                                 9
+13.3 Runtime testing and troubleshooting
+
+The API container was mapped from host port 7009 to container port 8080. Its first
+request returned HTTP 500 because AzureStorage:ConnectionString was not
+configured in the container. After providing Azure storage settings, a second HTTP
+500 identified an uninitialised SQL Server connection string. The developer
+confirmed the SQL Server service and database, enabled a dedicated SQL login,
+and supplied a container-compatible connection string. A subsequent GET
+/api/events returned HTTP 200.
+
+The MVC container was accessible at localhost:7010. The landing page, login,
+participant dashboard, enrolment list, organiser dashboard, My Events and All
+Events were demonstrated successfully. Finally, both images were pushed to Docker
+Hub and their updated repository pages were shown.
+
+13.4 Deployment status
+
+Deployment status: local Docker deployment verified and Docker Hub image
+publication completed on 6 November 2026. This does not constitute a production
+cloud deployment or an internet-accessible hosted application. The image
+repositories enable future deployment to an appropriate container hosting
+environment.
+
+14. Challenges, solutions and lessons learned
+
+Challenge                   Diagnosis and response            Lesson
+Docker publish failure      Git repository metadata           Container build contexts must be
+                            reference error during container  clean and predictable
+Azure connection missing    build; Docker ignore rules were
+SQL connection missing      adjusted and builds repeated      Development secrets are not
+                            successfully                      automatically inherited by
+Image URL handling          Container lacked .NET user-       containers
+                            secrets; runtime AzureStorage     Host database connectivity differs
+Result position display     settings supplied securely        from local IDE execution
+Cross-organiser visibility  Container lacked a usable
+                            database connection; SQL          Validate distinct media source types
+                            login and explicit runtime
+                            configuration established         DTO/view-model alignment is
+                            API previously assumed all        critical
+                            event banners were Azure
+                            blobs; external HTTPS URLs        Read access and edit authority
+                            were supported                    should be separated
+                            Participant view model omitted
+                            finishing position; mapping
+                            updated
+                            Added a read-only All Events
+                            list with creator names while
+                            preserving ownership
+
+                                                              10
+15. Evaluation against objectives
+
+The delivered solution meets its core stated objectives in the demonstrated
+environment: distinct user roles, event and enrolment workflows, results
+management, relational persistence, image storage integration, REST
+communication, automated tests and container packaging. Docker runtime
+verification and Docker Hub publication extend the POE beyond a local IDE
+demonstration.
+Remaining limitations include the absence of verified public hosting, formal load
+testing, independent security assessment and a completed presentation recording.
+These do not negate the verified functional outcomes but should be disclosed clearly
+in an academic evaluation.
+
+16. Conclusion and recommendations
+
+RaceDay demonstrates the practical integration of backend development, browser-
+based MVC presentation, database management, cloud object storage, testing,
+version control, continuous integration and containerisation. The project successfully
+supports participant and organiser workflows and has been tested through both
+conventional local development and Docker-based execution. The successful
+publication of the API and MVC images provide an independently identifiable
+deliverable on Docker Hub.
+The immediate next steps are documentation finalisation and recording the required
+demonstration, not adding new features. For a future production release, priorities
+would include managed secret storage, persistent Data Protection keys, secure
+hosting and TLS, automated deployment, logging and monitoring, and a broader
+quality assurance plan.
+
+                                                                                                              11
+17. References
+
+Microsoft. (n.d.). ASP.NET Core documentation.
+https://learn.microsoft.com/aspnet/core/
+Microsoft. (n.d.). Entity Framework Core documentation.
+https://learn.microsoft.com/ef/core/
+Microsoft. (n.d.). Azure Blob Storage documentation.
+https://learn.microsoft.com/azure/storage/blobs/
+Docker. (n.d.). Docker documentation. https://docs.docker.com/
+GitHub. (n.d.). GitHub Actions documentation. https://docs.github.com/actions
+xUnit.net. (n.d.). xUnit.net documentation. https://xunit.net/
+RaceDay source repository. https://github.com/ST10073464/RaceDay_Part2
+RaceDay API image. https://hub.docker.com/r/erwin19851118/raceday-api
+RaceDay MVC image. https://hub.docker.com/r/erwin19851118/raceday-mvc
+
+                                                                                                              12
+18. Appendices and evidence register
+
+Appendix A – Using Docker images
+
+ A1. Participant dashboard showing available events and successful login.
+
+ A2. My Enrolments page showing confirmed registrations.
+
+ A3. Organiser dashboard with event and enrolment summary.
+
+                                                                                                              13
+ A4. My Events and All Events (read-only) pages.
+ A5. API HTTP 200 response from Docker at localhost:7009/api/events.
+
+                                                                                                              14
+ A6. Docker image build completion and Docker Hub repository pages.
+ A7. GitHub Actions successful workflow and four passing xUnit tests.
+
+                                                                                                              15
+Appendix B – Demonstration configuration (non-secret)
+
+Item                               Value
+Development API                    https://localhost:7008
+Development MVC                    http://localhost:5251
+Docker API                         http://localhost:7009
+Docker MVC                         http://localhost:7010
+Database                           RaceDayDB_Part2
+Container API port                 8080
+GitHub branch                      POE
+Image tags                         erwin19851118/raceday-api:latest;
+                                   erwin19851118/raceday-mvc:latest
+
+Appendix C – Submission readiness  Current status
+ Deliverable                       Final reported POE branch pushed; CI
+ Source code / GitHub              passed
+                                   Four passing tests reported
+ Automated tests                   Built, locally tested and published
+ Docker images                     Prepared; confirm academic metadata
+ Project report                    and attach evidence
+                                   Scheduled for next work session
+ Presentation video                Scheduled for next work session
+ Final rubric check
+
+                                                                         16
+

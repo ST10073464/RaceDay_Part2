@@ -26,6 +26,14 @@
 
                         @Html.AntiForgeryToken()
 
+                        @* Preserve the selected event during login *@
+                        @if (ViewBag.EventId != null)
+                        {
+                            <input type="hidden"
+                                   name="eventId"
+                                   value="@ViewBag.EventId" />
+                        }
+
                         <div asp-validation-summary="ModelOnly"
                              class="text-danger mb-3">
                         </div>
@@ -85,13 +93,21 @@
 
                         </div>
 
+                        <!-- LOGIN BUTTON -->
                         <div class="d-grid">
-
                             <button type="submit"
                                     class="btn btn-primary btn-lg">
                                 Login
                             </button>
+                        </div>
 
+                        <!-- CANCEL BUTTON -->
+                        <div class="d-grid mt-3">
+                            <a asp-controller="Home"
+                               asp-action="Index"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
                         </div>
 
                     </form>
@@ -102,7 +118,8 @@
                         Don't have an account?
 
                         <a asp-controller="Account"
-                           asp-action="Register">
+                           asp-action="Register"
+                           asp-route-eventId="@ViewBag.EventId">
                             Create an account
                         </a>
                     </p>
@@ -114,8 +131,7 @@
     </div>
 </div>
 
-@section Scripts
-{
+@section Scripts {
     @{
         await Html.RenderPartialAsync(
             "_ValidationScriptsPartial");

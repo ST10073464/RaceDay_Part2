@@ -1011,6 +1011,67 @@ namespace RaceDay.Mvc.Controllers
             }
         }
 
+
+        // =========================================================
+        // ORGANISER - ALL PARTICIPANTS ACROSS OWN EVENTS
+        // =========================================================
+        [HttpGet]
+        public async Task<IActionResult> AllParticipants()
+        {
+            if (!IsOrganiser())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                List<EventViewModel> events =
+                    await _apiClient.GetMyEventsAsync();
+
+                var model = new AllParticipantsViewModel
+                {
+                    TotalEvents = events.Count
+                };
+
+                foreach (EventViewModel raceEvent in events)
+                {
+                    List<EventEnrolmentViewModel> enrolments =
+                        await _apiClient.GetEventEnrolmentsAsync(
+                            raceEvent.EventId);
+
+                    foreach (EventEnrolmentViewModel enrolment in enrolments)
+                    {
+                        model.Enrolments.Add(
+                            new AllParticipantEnrolmentViewModel
+                            {
+                                EventId = raceEvent.EventId,
+                                EventName = raceEvent.EventName,
+                                Enrolment = enrolment
+                            });
+                    }
+                }
+
+                model.Enrolments = model.Enrolments
+                    .OrderByDescending(e => e.Enrolment.EnrolmentDate)
+                    .ToList();
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load all organiser participants.");
+
+                TempData["ErrorMessage"] =
+                    "The participant records could not be loaded.";
+
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+
+
         // =========================================================
         // ORGANISER - EVENT PARTICIPANTS
         // =========================================================

@@ -4,298 +4,209 @@
     ViewData["Title"] = "Register";
 }
 
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-
             <div class="card shadow">
                 <div class="card-body p-4">
+                    <h2 class="text-center mb-2">Create RaceDay Account</h2>
+                    <p class="text-center text-muted mb-4">Register as a participant to access RaceDay events.</p>
 
-                    <h2 class="text-center mb-2">
-                        Create RaceDay Account
-                    </h2>
-
-                    <p class="text-center text-muted mb-4">
-                        Register as a participant to access RaceDay events.
-                    </p>
-
-                    <form asp-controller="Account"
-                          asp-action="Register"
-                          method="post"
-                          autocomplete="off">
-
+                    <form asp-controller="Account" asp-action="Register" method="post" id="registrationForm" autocomplete="off">
                         @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                        <div asp-validation-summary="ModelOnly"
-                             class="text-danger mb-3">
-                        </div>
+                        <!-- STEP 1: AGE CONFIRMATION -->
+                        <fieldset class="mb-4">
+                            <legend class="form-label fw-semibold fs-6">Are you 16 years or older?</legend>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="ageConfirmation" id="ageYes" value="yes" />
+                                <label class="form-check-label" for="ageYes">Yes, I am 16 years or older</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="ageConfirmation" id="ageNo" value="no" />
+                                <label class="form-check-label" for="ageNo">No, I am younger than 16</label>
+                            </div>
+                            <div id="underageNotice" class="alert alert-warning mt-3 d-none" role="alert">
+                                You must be at least 16 years old to create a RaceDay account.
+                            </div>
+                        </fieldset>
 
-                        <div class="row">
+                        <!-- STEP 2: DATE OF BIRTH -->
+                        <section id="dobSection" class="d-none mb-4" aria-label="Date of birth verification">
+                            <label asp-for="DateOfBirth" class="form-label fw-semibold">Date of Birth</label>
+                            <input asp-for="DateOfBirth" type="date" class="form-control" id="DateOfBirth" autocomplete="bday" disabled />
+                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            <div class="form-text">Your age is checked using today's date. Your date of birth cannot be changed through your profile after registration.</div>
+                            <div id="dobEligibilityMessage" class="mt-2" role="status" aria-live="polite"></div>
+                        </section>
 
-                            <div class="col-md-6 mb-3">
-
-                                <label asp-for="FirstName"
-                                       class="form-label">
-                                    First Name
-                                </label>
-
-                                <input asp-for="FirstName"
-                                       class="form-control"
-                                       id="FirstName"
-                                       placeholder="Enter your first name"
-                                       autocomplete="off"
-                                       value="" />
-
-                                <span asp-validation-for="FirstName"
-                                      class="text-danger">
-                                </span>
-
+                        <!-- STEP 3: REGISTRATION DETAILS -->
+                        <fieldset id="registrationDetails" class="d-none" disabled>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="FirstName" class="form-label">First Name</label>
+                                    <input asp-for="FirstName" class="form-control" id="FirstName" placeholder="Enter your first name" autocomplete="given-name" />
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="LastName" class="form-label">Last Name</label>
+                                    <input asp-for="LastName" class="form-control" id="LastName" placeholder="Enter your last name" autocomplete="family-name" />
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
-
-                                <label asp-for="LastName"
-                                       class="form-label">
-                                    Last Name
-                                </label>
-
-                                <input asp-for="LastName"
-                                       class="form-control"
-                                       id="LastName"
-                                       placeholder="Enter your last name"
-                                       autocomplete="off"
-                                       value="" />
-
-                                <span asp-validation-for="LastName"
-                                      class="text-danger">
-                                </span>
-
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label">Email Address (Username)</label>
+                                <input asp-for="Email" type="email" class="form-control" id="Email" placeholder="Enter your email address" autocomplete="email" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                                <div class="form-text">
+                                    Your email address will be used as your RaceDay username when logging in.
+                                    Please ensure it is correct before creating your account, as it cannot be changed through your profile.
+                                </div>
                             </div>
 
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label asp-for="Email"
-                                   class="form-label">
-                                Email Address
-                            </label>
-
-                            <input asp-for="Email"
-                                   type="email"
-                                   class="form-control"
-                                   id="Email"
-                                   placeholder="Enter your email address"
-                                   autocomplete="off"
-                                   value="" />
-
-                            <span asp-validation-for="Email"
-                                  class="text-danger">
-                            </span>
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label asp-for="Password"
-                                   class="form-label">
-                                Password
-                            </label>
-
-                            <input asp-for="Password"
-                                   type="password"
-                                   class="form-control"
-                                   id="Password"
-                                   placeholder="Minimum 8 characters"
-                                   autocomplete="new-password"
-                                   value="" />
-
-                            <div class="form-check mt-2">
-
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       id="showRegisterPassword" />
-
-                                <label class="form-check-label"
-                                       for="showRegisterPassword">
-                                    Show password
-                                </label>
-
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label">Password</label>
+                                <input asp-for="Password" type="password" class="form-control" id="Password" placeholder="Minimum 8 characters" autocomplete="new-password" />
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="showRegisterPassword" />
+                                    <label class="form-check-label" for="showRegisterPassword">Show password</label>
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                                <div class="form-text">Password must contain at least 8 characters.</div>
                             </div>
 
-                            <span asp-validation-for="Password"
-                                  class="text-danger">
-                            </span>
-
-                            <div class="form-text">
-                                Password must contain at least 8 characters.
+                            <div class="mb-4">
+                                <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                                <input asp-for="PhoneNumber" type="tel" class="form-control" id="PhoneNumber" placeholder="Enter your phone number" autocomplete="tel" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                             </div>
 
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label asp-for="PhoneNumber"
-                                   class="form-label">
-                                Phone Number
-                            </label>
-
-                            <input asp-for="PhoneNumber"
-                                   type="tel"
-                                   class="form-control"
-                                   id="PhoneNumber"
-                                   placeholder="Enter your phone number"
-                                   autocomplete="off"
-                                   value="" />
-
-                            <span asp-validation-for="PhoneNumber"
-                                  class="text-danger">
-                            </span>
-
-                        </div>
-
-                        <div class="mb-4">
-
-                            <label asp-for="DateOfBirth"
-                                   class="form-label">
-                                Date of Birth
-                            </label>
-
-                            <input asp-for="DateOfBirth"
-                                   type="date"
-                                   class="form-control"
-                                   id="DateOfBirth"
-                                   autocomplete="off"
-                                   value="" />
-
-                            <span asp-validation-for="DateOfBirth"
-                                  class="text-danger">
-                            </span>
-
-                            <div class="form-text">
-                                You must be at least 16 years old
-                                to create a RaceDay account.
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    Create Account
+                                </button>
                             </div>
 
-                        </div>
-
-                        <div class="d-grid">
-
-                            <button type="submit"
-                                    class="btn btn-primary btn-lg">
-                                Create Account
-                            </button>
-
-                        </div>
+                        </fieldset>
 
                     </form>
 
-                    <hr class="my-4" />
+                    <!-- CANCEL REGISTRATION -->
+                    <div class="d-grid mt-3">
+                        <a asp-controller="Home"
+                           asp-action="Index"
+                           class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
 
+                    <hr class="my-4" />
                     <p class="text-center mb-0">
                         Already have an account?
-
-                        <a asp-controller="Account"
-                           asp-action="Login">
-                            Log in
-                        </a>
+                        <a asp-controller="Account" asp-action="Login">Log in</a>
                     </p>
-
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-@section Scripts
-{
+@section Scripts {
     @{
-        await Html.RenderPartialAsync(
-            "_ValidationScriptsPartial");
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
     <script>
-        document.addEventListener(
-            "DOMContentLoaded",
-            function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('registrationForm');
+            const yes = document.getElementById('ageYes');
+            const no = document.getElementById('ageNo');
+            const underageNotice = document.getElementById('underageNotice');
+            const dobSection = document.getElementById('dobSection');
+            const dob = document.getElementById('DateOfBirth');
+            const message = document.getElementById('dobEligibilityMessage');
+            const details = document.getElementById('registrationDetails');
+            const password = document.getElementById('Password');
+            const showPassword = document.getElementById('showRegisterPassword');
 
-                const firstNameInput =
-                    document.getElementById("FirstName");
+            // Compare calendar dates, not timestamps, to avoid timezone differences.
+            const now = new Date();
+            const today = {
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                day: now.getDate()
+            };
+            const twoDigits = n => String(n).padStart(2, '0');
+            dob.max = `${today.year}-${twoDigits(today.month)}-${twoDigits(today.day)}`;
 
-                const lastNameInput =
-                    document.getElementById("LastName");
+            function ageFromDob(value) {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+                const [year, month, day] = value.split('-').map(Number);
+                const parsed = new Date(year, month - 1, day);
+                if (parsed.getFullYear() !== year || parsed.getMonth() + 1 !== month || parsed.getDate() !== day) return null;
+                if (year > today.year || (year === today.year && (month > today.month || (month === today.month && day > today.day)))) return -1;
 
-                const emailInput =
-                    document.getElementById("Email");
+                let age = today.year - year;
+                // DateOnly.AddYears treats a February 29 birthday as February 28 in non-leap years.
+                let birthdayDay = day;
+                if (month === 2 && day === 29) {
+                    const leap = today.year % 4 === 0 && (today.year % 100 !== 0 || today.year % 400 === 0);
+                    if (!leap) birthdayDay = 28;
+                }
+                if (today.month < month || (today.month === month && today.day < birthdayDay)) age--;
+                return age;
+            }
 
-                const passwordInput =
-                    document.getElementById("Password");
+            function updateEligibility() {
+                const choseYes = yes.checked;
+                const choseNo = no.checked;
+                underageNotice.classList.toggle('d-none', !choseNo);
+                dobSection.classList.toggle('d-none', !choseYes);
+                dob.disabled = !choseYes;
 
-                const phoneInput =
-                    document.getElementById("PhoneNumber");
+                let eligible = false;
+                message.textContent = '';
+                message.className = 'mt-2';
 
-                const dateOfBirthInput =
-                    document.getElementById("DateOfBirth");
-
-                const showPasswordCheckbox =
-                    document.getElementById(
-                        "showRegisterPassword");
-
-                function clearRegistrationForm() {
-
-                    if (firstNameInput) {
-                        firstNameInput.value = "";
-                    }
-
-                    if (lastNameInput) {
-                        lastNameInput.value = "";
-                    }
-
-                    if (emailInput) {
-                        emailInput.value = "";
-                    }
-
-                    if (passwordInput) {
-                        passwordInput.value = "";
-                        passwordInput.type = "password";
-                    }
-
-                    if (phoneInput) {
-                        phoneInput.value = "";
-                    }
-
-                    if (dateOfBirthInput) {
-                        dateOfBirthInput.value = "";
-                    }
-
-                    if (showPasswordCheckbox) {
-                        showPasswordCheckbox.checked = false;
+                if (choseYes && dob.value) {
+                    const age = ageFromDob(dob.value);
+                    if (age === null || age < 0) {
+                        message.textContent = 'Please enter a valid date of birth that is not in the future.';
+                        message.classList.add('text-danger');
+                    } else if (age < 16) {
+                        message.textContent = `You are ${age} years old. You must be at least 16 to register.`;
+                        message.classList.add('text-danger');
+                    } else {
+                        eligible = true;
+                        message.textContent = `Age confirmed: ${age} years old. You can continue with registration.`;
+                        message.classList.add('text-success');
                     }
                 }
 
-                // Always start Register with empty fields.
-                clearRegistrationForm();
+                details.classList.toggle('d-none', !eligible);
+                details.disabled = !eligible;
+                return eligible;
+            }
 
-                // Clear delayed browser autofill once.
-                window.setTimeout(
-                    clearRegistrationForm,
-                    300);
+            yes.addEventListener('change', updateEligibility);
+            no.addEventListener('change', updateEligibility);
+            dob.addEventListener('input', updateEligibility);
+            dob.addEventListener('change', updateEligibility);
 
-                // Show / hide password.
-                if (passwordInput &&
-                    showPasswordCheckbox) {
+            showPassword.addEventListener('change', function () {
+                password.type = this.checked ? 'text' : 'password';
+            });
 
-                    showPasswordCheckbox.addEventListener(
-                        "change",
-                        function () {
-
-                            passwordInput.type =
-                                this.checked
-                                    ? "text"
-                                    : "password";
-                        });
+            form.addEventListener('submit', function (event) {
+                if (!updateEligibility()) {
+                    event.preventDefault();
                 }
             });
+
+            // Keep values after a server-side validation error, while requiring
+            // the participant to confirm the age question again.
+            updateEligibility();
+        });
     </script>
 }

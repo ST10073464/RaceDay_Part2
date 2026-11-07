@@ -168,6 +168,29 @@ namespace RaceDay.Api.Controllers
                 });
             }
 
+            // RaceDay absolute minimum participation age.
+            if (age < 16)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "You must be at least 16 years old " +
+                        "on the event date to participate."
+                });
+            }
+
+            // Explicit restriction for adult categories.
+            if (age >= 16 && age < 18 && category.MinAge >= 18)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "Participants aged 16–17 cannot enrol " +
+                        "in an 18+ category. " +
+                        $"You will be {age} years old on the event date."
+                });
+            }
+
             // -------------------------------------------------
             // CHECK EXISTING ENROLMENT
             // -------------------------------------------------

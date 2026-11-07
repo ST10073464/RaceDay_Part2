@@ -1,0 +1,242 @@
+﻿@model RaceDay.Mvc.Models.AllParticipantsViewModel
+
+@{
+    ViewData["Title"] = "All Participants";
+
+    int totalEnrolments = Model.Enrolments.Count;
+
+    int confirmed = Model.Enrolments.Count(e =>
+        string.Equals(
+            e.Enrolment.EnrolmentStatus,
+            "Confirmed",
+            StringComparison.OrdinalIgnoreCase));
+
+    int cancelled = Model.Enrolments.Count(e =>
+        string.Equals(
+            e.Enrolment.EnrolmentStatus,
+            "Cancelled",
+            StringComparison.OrdinalIgnoreCase));
+}
+
+<div class="container py-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="fw-bold mb-2">All Participants</h1>
+
+            <p class="text-muted mb-0">
+                View participants enrolled across all your RaceDay events.
+            </p>
+        </div>
+
+        <a asp-controller="Organiser"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">My Events</p>
+                    <h2 class="fw-bold">@Model.TotalEvents</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Total Enrolments</p>
+                    <h2 class="fw-bold">@totalEnrolments</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Confirmed</p>
+                    <h2 class="fw-bold text-success">@confirmed</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Cancelled</p>
+                    <h2 class="fw-bold">@cancelled</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ALL PARTICIPANTS TABLE -->
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white py-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <h5 class="fw-bold mb-0">
+                    Participant Enrolments
+                </h5>
+
+                <input type="search"
+                       id="participantSearch"
+                       class="form-control"
+                       style="max-width: 300px;"
+                       placeholder="Search participant or event..."
+                       aria-label="Search participants" />
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            @if (totalEnrolments == 0)
+            {
+                <div class="text-center py-5">
+                    <h5>No Participants Yet</h5>
+
+                    <p class="text-muted">
+                        No participants have enrolled in your events.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>Participant</th>
+                                <th>Event</th>
+                                <th>Category</th>
+                                <th>Enrolment Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var item in Model.Enrolments)
+                            {
+                                <tr class="participant-row">
+
+                                    <td>
+                                        <strong>
+                                            @item.Enrolment.ParticipantName
+                                        </strong>
+
+                                        <div class="small text-muted">
+                                            ID: @item.Enrolment.ParticipantId
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        @item.EventName
+                                    </td>
+
+                                    <td>
+                                        @item.Enrolment.CategoryName
+                                    </td>
+
+                                    <td>
+                                        @item.Enrolment.EnrolmentDate.ToString("dd MMM yyyy HH:mm")
+                                    </td>
+
+                                    <td>
+                                        @if (string.Equals(
+                                            item.Enrolment.EnrolmentStatus,
+                                            "Confirmed",
+                                            StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span class="badge bg-success">
+                                                Confirmed
+                                            </span>
+                                        }
+                                        else if (string.Equals(
+                                            item.Enrolment.EnrolmentStatus,
+                                            "Cancelled",
+                                            StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Cancelled
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                @item.Enrolment.EnrolmentStatus
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        <a asp-controller="Organiser"
+                                           asp-action="EventParticipants"
+                                           asp-route-eventId="@item.EventId"
+                                           class="btn btn-sm btn-outline-primary text-nowrap">
+                                            View Event
+                                        </a>
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <p id="noSearchResults"
+                   class="text-center text-muted py-3 d-none"
+                   role="status">
+                    No participants match your search.
+                </p>
+            }
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const input = document.getElementById("participantSearch");
+        const rows = document.querySelectorAll(".participant-row");
+        const noResults = document.getElementById("noSearchResults");
+
+        if (!input) return;
+
+        input.addEventListener("input", function () {
+
+            const search = input.value.trim().toLowerCase();
+            let visible = 0;
+
+            rows.forEach(function (row) {
+
+                const matches =
+                    row.textContent.toLowerCase().includes(search);
+
+                row.classList.toggle("d-none", !matches);
+
+                if (matches) visible++;
+            });
+
+            if (noResults) {
+                noResults.classList.toggle("d-none", visible > 0);
+            }
+        });
+    });
+</script>

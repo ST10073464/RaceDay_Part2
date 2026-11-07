@@ -2,6 +2,23 @@
 
 @{
     ViewData["Title"] = "My Profile";
+
+    int? participantAge = null;
+
+    if (Model.DateOfBirth.HasValue)
+    {
+        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+        DateOnly dob = Model.DateOfBirth.Value;
+
+        int age = today.Year - dob.Year;
+
+        if (today < dob.AddYears(age))
+        {
+            age--;
+        }
+
+        participantAge = age;
+    }
 }
 
 <div class="container py-4">
@@ -303,8 +320,10 @@
                                    readonly />
 
                             <div class="form-text">
-                                Your login email address cannot be
-                                changed from this page.
+                                <i class="bi bi-lock-fill me-1"></i>
+                                This email address is your RaceDay username.
+                                It is used to log in and cannot be changed
+                                through your profile.
                             </div>
 
                         </div>
@@ -336,12 +355,34 @@
                                 </label>
 
                                 <input asp-for="DateOfBirth"
-                                       class="form-control"
-                                       type="date" />
+                                       class="form-control bg-light"
+                                       type="date"
+                                       readonly
+                                       aria-describedby="dobProtectionNotice" />
+
+                                <div id="dobProtectionNotice"
+                                     class="form-text">
+                                    <i class="bi bi-lock-fill me-1"></i>
+                                    Your date of birth is protected and cannot be changed
+                                    after registration. Contact RaceDay administration
+                                    if a correction is required.
+                                </div>
 
                                 <span asp-validation-for="DateOfBirth"
                                       class="text-danger">
                                 </span>
+
+                                <div class="mt-3">
+                                    <label for="ParticipantAge" class="form-label">
+                                        Age
+                                    </label>
+
+                                    <input type="text"
+                                           id="ParticipantAge"
+                                           class="form-control bg-light"
+                                           value="@(participantAge.HasValue ? $"{participantAge.Value} years" : "Not available")"
+                                           readonly />
+                                </div>
 
                             </div>
 

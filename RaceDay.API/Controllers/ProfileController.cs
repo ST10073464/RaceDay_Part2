@@ -75,7 +75,10 @@ public class ProfileController : ControllerBase
         return Ok(user);
     }
 
+
     // PUT: api/profile
+    // Users may update their personal contact details,
+    // but their registered date of birth is protected.
     [HttpPut]
     public async Task<IActionResult> UpdateProfile(
         [FromBody] UpdateProfileRequest request)
@@ -93,7 +96,10 @@ public class ProfileController : ControllerBase
 
         if (user == null)
         {
-            return NotFound();
+            return NotFound(new
+            {
+                message = "User account was not found."
+            });
         }
 
         if (string.IsNullOrWhiteSpace(request.FirstName) ||
@@ -105,15 +111,32 @@ public class ProfileController : ControllerBase
             });
         }
 
+        // Date of birth is locked after registration.
+        // Reject any attempt to change or remove it.
+        if (request.DateOfBirth != user.DateOfBirth)
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Your date of birth cannot be changed " +
+                    "through your profile. Please contact " +
+                    "RaceDay administration if a correction " +
+                    "is required."
+            });
+        }
+
+        // These details remain editable.
         user.FirstName = request.FirstName.Trim();
         user.LastName = request.LastName.Trim();
         user.PhoneNumber = request.PhoneNumber;
-        user.DateOfBirth = request.DateOfBirth;
+
+        // Do not update user.DateOfBirth.
 
         await _context.SaveChangesAsync();
 
         return NoContent();
     }
+
 
     // POST: api/profile/picture
     [HttpPost("picture")]

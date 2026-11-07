@@ -1,0 +1,264 @@
+﻿@model RaceDay.Mvc.Models.EventDetailsViewModel
+
+@{
+    ViewData["Title"] = "Event Details";
+
+    var role = Context.Session.GetString("Role");
+
+    bool isParticipant = string.Equals(
+        role,
+        "Participant",
+        StringComparison.OrdinalIgnoreCase);
+
+    var raceEvent = Model.Event;
+}
+
+<style>
+    .public-event-page {
+        --event-ink: #092b3b;
+        --event-teal: #0f5158;
+    }
+
+    .public-event-header {
+        background: linear-gradient(120deg, #092b3b, #0f5158);
+        color: white;
+        padding: 38px;
+        border-radius: 20px;
+        margin-bottom: 28px;
+    }
+
+        .public-event-header h1 {
+            font-weight: 800;
+        }
+
+    .public-event-banner {
+        width: 100%;
+        max-height: 380px;
+        object-fit: cover;
+        border-radius: 16px;
+        margin-bottom: 25px;
+    }
+
+    .public-event-panel {
+        background: white;
+        border: 1px solid #e0e8eb;
+        border-radius: 16px;
+        padding: 28px;
+        margin-bottom: 25px;
+    }
+
+        .public-event-panel h2 {
+            color: #092b3b;
+            font-weight: 800;
+        }
+
+    .public-category {
+        border: 1px solid #dce5e8;
+        border-radius: 12px;
+        padding: 20px;
+        height: 100%;
+        background: #fafcfc;
+    }
+
+        .public-category h3 {
+            font-size: 1.2rem;
+            font-weight: 750;
+        }
+
+    .public-enrol-panel {
+        background: #edf7f1;
+        border-radius: 16px;
+        padding: 30px;
+        margin-top: 25px;
+    }
+
+    .public-enrol-button {
+        background: #0f5158;
+        color: white;
+        border-radius: 10px;
+        padding: 12px 22px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .public-enrol-button:hover {
+            background: #092b3b;
+            color: white;
+        }
+</style>
+
+<div class="public-event-page py-4">
+
+    <div class="mb-3">
+        <a asp-controller="Home"
+           asp-action="ExploreEvents"
+           class="text-decoration-none">
+            Back to Explore Events
+        </a>
+    </div>
+
+    <section class="public-event-header">
+
+        <span class="badge bg-success mb-3">
+            @raceEvent.EventType
+        </span>
+
+        <h1>@raceEvent.EventName</h1>
+
+        <p class="mb-0">
+            Discover the event information and available categories below.
+        </p>
+
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(raceEvent.BannerImageUrl))
+    {
+        <img src="@raceEvent.BannerImageUrl"
+             alt="@raceEvent.EventName"
+             class="public-event-banner" />
+    }
+
+    <section class="public-event-panel">
+
+        <h2 class="mb-4">Event Information</h2>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <strong>Date</strong>
+                <p>@raceEvent.EventDate.ToString("dd MMMM yyyy")</p>
+            </div>
+
+            <div class="col-md-6">
+                <strong>Location</strong>
+                <p>@raceEvent.Location</p>
+            </div>
+
+            <div class="col-md-6">
+                <strong>Event Type</strong>
+                <p>@raceEvent.EventType</p>
+            </div>
+
+            <div class="col-md-6">
+                <strong>Distance</strong>
+                <p>@raceEvent.DistanceKm km</p>
+            </div>
+
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(raceEvent.Description))
+        {
+            <h3 class="h5 fw-bold mt-3">
+                About This Event
+            </h3>
+
+            <p>@raceEvent.Description</p>
+        }
+
+    </section>
+
+    <section class="public-event-panel">
+
+        <h2 class="mb-3">Event Categories</h2>
+
+        <p class="text-muted">
+            Each category may have different age requirements.
+            Your eligibility will be checked when you log in.
+        </p>
+
+        @if (Model.Categories == null || Model.Categories.Count == 0)
+        {
+            <div class="alert alert-info">
+                No categories have been added to this event yet.
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+
+                @foreach (var category in Model.Categories)
+                {
+                    <div class="col-md-6">
+
+                        <article class="public-category">
+
+                            <h3>@category.CategoryName</h3>
+
+                            <p class="mb-2">
+                                <strong>Distance:</strong>
+                                @category.DistanceKm km
+                            </p>
+
+                            <p class="mb-0">
+                                <strong>Age Requirement:</strong>
+                                @category.MinAge to @category.MaxAge years
+                            </p>
+
+                        </article>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </section>
+
+    <section class="public-enrol-panel">
+
+        <h2 class="h4 fw-bold">
+            Ready to participate?
+        </h2>
+
+        @if (isParticipant)
+        {
+            <p>
+                Continue to the participant event page to
+                select an eligible category and enroll.
+            </p>
+
+            <a asp-controller="Home"
+               asp-action="EventDetails"
+               asp-route-id="@raceEvent.EventId"
+               class="public-enrol-button">
+                Continue to Enrol
+            </a>
+        }
+        else if (string.IsNullOrWhiteSpace(role))
+        {
+            <p>
+                Log in or create a RaceDay account to
+                enroll in this event.
+            </p>
+
+            <div class="d-flex flex-wrap gap-2">
+
+                <!-- REMEMBER SELECTED EVENT DURING LOGIN -->
+                <a asp-controller="Account"
+                   asp-action="Login"
+                   asp-route-eventId="@raceEvent.EventId"
+                   class="public-enrol-button">
+                    Log In to Enrol
+                </a>
+
+                <!-- REMEMBER SELECTED EVENT DURING REGISTRATION -->
+                <a asp-controller="Account"
+                   asp-action="Register"
+                   asp-route-eventId="@raceEvent.EventId"
+                   class="btn btn-outline-success">
+                    Create Account
+                </a>
+
+            </div>
+        }
+        else
+        {
+            <p>
+                Event enrollment is available to participant accounts.
+            </p>
+        }
+
+    </section>
+
+</div>

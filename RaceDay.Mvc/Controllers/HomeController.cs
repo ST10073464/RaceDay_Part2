@@ -61,6 +61,77 @@ namespace RaceDay.Mvc.Controllers
                 return View(new List<EventViewModel>());
             }
         }
+
+
+        // ---------------------------------------------------------
+        // PUBLIC EXPLORE EVENTS
+        // ---------------------------------------------------------
+        [HttpGet]
+        public async Task<IActionResult> ExploreEvents()
+        {
+            try
+            {
+                List<EventViewModel> events =
+                    await _apiClient.GetEventsAsync();
+
+                return View(events);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load public RaceDay events.");
+
+                ViewBag.EventError =
+                    "Events could not be loaded at this time.";
+
+                return View(new List<EventViewModel>());
+            }
+        }
+
+        // ---------------------------------------------------------
+        // PUBLIC EVENT DETAILS
+        // ---------------------------------------------------------
+        [HttpGet]
+        public async Task<IActionResult> PublicEventDetails(int id)
+        {
+            try
+            {
+                EventViewModel? raceEvent =
+                    await _apiClient.GetEventAsync(id);
+
+                if (raceEvent == null)
+                {
+                    return NotFound();
+                }
+
+                List<CategoryViewModel> categories =
+                    await _apiClient.GetEventCategoriesAsync(id);
+
+                var model = new EventDetailsViewModel
+                {
+                    Event = raceEvent,
+                    Categories = categories
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to load public event {EventId}.",
+                    id);
+
+                TempData["ErrorMessage"] =
+                    "Unable to load event details.";
+
+                return RedirectToAction(nameof(ExploreEvents));
+            }
+        }
+
+
+
         // ---------------------------------------------------------
         // EVENT DETAILS
         // ---------------------------------------------------------

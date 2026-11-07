@@ -3,46 +3,39 @@
 @{
     ViewData["Title"] = "Event Participants";
 
-    int totalParticipants = Model.Enrolments.Count;
+    int totalParticipants = Model.Enrolments?.Count ?? 0;
 
-    int confirmedParticipants =
-        Model.Enrolments.Count(
-            e => string.Equals(
-                e.EnrolmentStatus,
-                "Confirmed",
-                StringComparison.OrdinalIgnoreCase));
+    int confirmedParticipants = Model.Enrolments?.Count(e =>
+        string.Equals(
+            e.EnrolmentStatus,
+            "Confirmed",
+            StringComparison.OrdinalIgnoreCase)) ?? 0;
 
-    int cancelledParticipants =
-        Model.Enrolments.Count(
-            e => string.Equals(
-                e.EnrolmentStatus,
-                "Cancelled",
-                StringComparison.OrdinalIgnoreCase));
+    int cancelledParticipants = Model.Enrolments?.Count(e =>
+        string.Equals(
+            e.EnrolmentStatus,
+            "Cancelled",
+            StringComparison.OrdinalIgnoreCase)) ?? 0;
 }
 
-<div class="container mt-4">
+<div class="container py-4">
 
     <!-- PAGE HEADER -->
-    <div class="d-flex justify-content-between
-        align-items-start mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
 
         <div>
-            <h1 class="fw-bold mb-1">
-                Event Participants
-            </h1>
+            <h1 class="fw-bold mb-2">Event Participants</h1>
 
-            <h5 class="mb-2">
-                @Model.EventName
-            </h5>
+            <h5 class="mb-2">@Model.EventName</h5>
 
             <p class="text-muted mb-0">
                 @Model.EventDate.ToString("dd MMMM yyyy")
-                ·
+                &bull;
                 @Model.Location
             </p>
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
 
             <a asp-controller="Organiser"
                asp-action="ManageCategories"
@@ -59,106 +52,88 @@
             </a>
 
             <a asp-controller="Organiser"
-               asp-action="MyEvents"
+               asp-action="Index"
                class="btn btn-outline-secondary">
-                Back to My Events
+                Back to Dashboard
             </a>
 
         </div>
     </div>
 
-
-    <!-- SUMMARY -->
+    <!-- PARTICIPANT SUMMARY -->
     <div class="row g-3 mb-4">
 
         <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 border-0">
                 <div class="card-body">
-
-                    <p class="text-muted mb-1">
-                        Total Enrolments
-                    </p>
-
+                    <p class="text-muted mb-1">Total Enrolments</p>
                     <h2 class="fw-bold mb-0">
                         @totalParticipants
                     </h2>
-
                 </div>
             </div>
         </div>
 
-
         <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 border-0">
                 <div class="card-body">
-
-                    <p class="text-muted mb-1">
-                        Confirmed
-                    </p>
-
-                    <h2 class="fw-bold mb-0">
+                    <p class="text-muted mb-1">Confirmed</p>
+                    <h2 class="fw-bold mb-0 text-success">
                         @confirmedParticipants
                     </h2>
-
                 </div>
             </div>
         </div>
 
-
         <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 border-0">
                 <div class="card-body">
-
-                    <p class="text-muted mb-1">
-                        Cancelled
-                    </p>
-
+                    <p class="text-muted mb-1">Cancelled</p>
                     <h2 class="fw-bold mb-0">
                         @cancelledParticipants
                     </h2>
-
                 </div>
             </div>
         </div>
 
     </div>
 
+    <!-- PARTICIPANT LIST -->
+    <div class="card shadow-sm border-0">
 
-    <!-- PARTICIPANTS TABLE -->
-    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
 
-        <div class="card-header bg-white">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
 
-            <div class="d-flex justify-content-between
-                align-items-center">
-
-                <h5 class="mb-0">
+                <h5 class="fw-bold mb-0">
                     Participant Enrolments
+                    <span class="badge bg-primary ms-2">
+                        @totalParticipants
+                    </span>
                 </h5>
 
-                <span class="badge bg-secondary">
-                    @totalParticipants
-                </span>
+                <input type="search"
+                       id="participantSearch"
+                       class="form-control"
+                       style="max-width: 300px;"
+                       placeholder="Search participants..."
+                       aria-label="Search participants" />
 
             </div>
-
         </div>
-
 
         <div class="card-body">
 
-            @if (Model.Enrolments == null ||
-                 Model.Enrolments.Count == 0)
+            @if (Model.Enrolments == null || Model.Enrolments.Count == 0)
             {
                 <div class="text-center py-5">
 
-                    <h5>
+                    <h5 class="fw-bold">
                         No Participants Yet
                     </h5>
 
                     <p class="text-muted mb-0">
-                        No participants have enrolled
-                        in this event yet.
+                        No participants have enrolled in this event yet.
                     </p>
 
                 </div>
@@ -167,18 +142,17 @@
             {
                 <div class="table-responsive">
 
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle"
+                           id="participantsTable">
 
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th>Participant</th>
                                 <th>Category</th>
                                 <th>Enrolment Date</th>
                                 <th>Status</th>
                                 <th>Enrolment ID</th>
-                                <th class="text-end">
-                                    Action
-                                </th>
+                                <th class="text-end">Action</th>
                             </tr>
                         </thead>
 
@@ -186,7 +160,7 @@
 
                             @foreach (var enrolment in Model.Enrolments)
                             {
-                                <tr>
+                                <tr class="participant-row">
 
                                     <td>
                                         <strong>
@@ -200,7 +174,9 @@
                                     </td>
 
                                     <td>
-                                        @enrolment.CategoryName
+                                        <span class="badge bg-light text-dark border">
+                                            @enrolment.CategoryName
+                                        </span>
                                     </td>
 
                                     <td>
@@ -208,7 +184,6 @@
                                     </td>
 
                                     <td>
-
                                         @if (string.Equals(
                                             enrolment.EnrolmentStatus,
                                             "Confirmed",
@@ -233,7 +208,6 @@
                                                 @enrolment.EnrolmentStatus
                                             </span>
                                         }
-
                                     </td>
 
                                     <td>
@@ -252,14 +226,12 @@
                                                asp-route-eventId="@Model.EventId"
                                                asp-route-enrolmentId="@enrolment.EnrolmentId"
                                                class="btn btn-sm btn-outline-primary">
-
                                                 Record Result
-
                                             </a>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">
+                                            <span class="text-muted small">
                                                 Not available
                                             </span>
                                         }
@@ -270,14 +242,56 @@
                             }
 
                         </tbody>
-
                     </table>
 
                 </div>
+
+                <p id="noSearchResults"
+                   class="text-center text-muted py-3 d-none"
+                   role="status">
+                    No participants match your search.
+                </p>
             }
 
         </div>
-
     </div>
 
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const searchInput = document.getElementById("participantSearch");
+        const rows = document.querySelectorAll(".participant-row");
+        const noResults = document.getElementById("noSearchResults");
+
+        if (!searchInput || rows.length === 0) {
+            return;
+        }
+
+        searchInput.addEventListener("input", function () {
+
+            const searchTerm = this.value.trim().toLowerCase();
+            let visibleCount = 0;
+
+            rows.forEach(function (row) {
+
+                const rowText = row.textContent.toLowerCase();
+                const matches = rowText.includes(searchTerm);
+
+                row.classList.toggle("d-none", !matches);
+
+                if (matches) {
+                    visibleCount++;
+                }
+            });
+
+            if (noResults) {
+                noResults.classList.toggle(
+                    "d-none",
+                    visibleCount > 0
+                );
+            }
+        });
+    });
+</script>

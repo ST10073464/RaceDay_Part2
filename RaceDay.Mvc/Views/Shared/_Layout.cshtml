@@ -37,7 +37,46 @@
 
 <body>
 
-    <header>
+    @{
+        string currentController =
+            ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+
+        string currentAction =
+            ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+        bool isPublicPage =
+            !isLoggedIn &&
+            (
+                string.Equals(currentController, "Account",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                (
+                    string.Equals(currentAction, "Login",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    string.Equals(currentAction, "Register",
+                        StringComparison.OrdinalIgnoreCase)
+                )
+                ||
+                string.Equals(currentController, "Home",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                (
+                    string.Equals(currentAction, "Index",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    string.Equals(currentAction, "ExploreEvents",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    string.Equals(currentAction, "PublicEventDetails",
+                        StringComparison.OrdinalIgnoreCase)
+                )
+            );
+    }
+
+    @if (!isPublicPage)
+    {
+        <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm
             navbar-light bg-white border-bottom box-shadow mb-3">
 
@@ -92,6 +131,14 @@
                                     My Enrolments
                                 </a>
                             </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link"
+                                       asp-controller="Home"
+                                       asp-action="MyResults">
+                                        My Results
+                                    </a>
+                                </li>
 
                             <li class="nav-item">
                                 <a class="nav-link text-dark"
@@ -203,7 +250,8 @@
                 </div>
             </div>
         </nav>
-    </header>
+        </header>
+    }
 
     <div class="container">
 
