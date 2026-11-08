@@ -300,7 +300,7 @@ https://localhost:7008/swagger/index.html
 In a second terminal:
 
 ```powershell
-dotnet run --project RaceDay.Mvc
+dotnet run --project .\RaceDay.Mvc\RaceDay.Mvc.csproj --launch-profile http
 ```
 
 MVC development address:
@@ -313,123 +313,102 @@ Open this address in a browser to use the RaceDay web application.
 
 ---
 
-## Docker
+## Docker Deployment (Final POE)
 
-RaceDay.Mvc supports Docker deployment.
-
-The MVC Dockerfile is located at:
+RaceDay supports **two separate Docker containers**: one for `RaceDay.API` and one for `RaceDay.Mvc`. The Dockerfiles are located at:
 
 ```text
+RaceDay.API/Dockerfile
 RaceDay.Mvc/Dockerfile
 ```
 
-The Docker image includes the required RaceDay.Contracts project dependency during restore and build.
+The final POE setup was verified locally with Docker Desktop. The containers use a shared bridge network, `raceday-poe-network`, to communicate. Docker Desktop and a correctly configured SQL Server and Azure Blob Storage connection are required for functionality involving data and images.
 
-### Start Docker Desktop
+### Verified Local Container Configuration
 
-Ensure Docker Desktop is running before building or starting the container.
+| Component | Image | Container | Host URL |
+| --- | --- | --- | --- |
+| API | `raceday-api:poe-latest` | `raceday-api-final` | `http://localhost:8083` |
+| MVC | `raceday-mvc:poe-latest` | `raceday-mvc-final` | `http://localhost:8082` |
 
-Verify Docker with:
+Both containers listen on port `8080` internally. The host publishes MVC on `8082` and API on `8083`.
+
+The MVC container's verified configuration is:
+
+```text
+ApiSettings__BaseUrl=http://raceday-api-new:8080
+```
+
+**Important:** `raceday-api-new` is a network alias that currently resolves to the API container, even though its container name is `raceday-api-final`. The alias was verified with `getent hosts`. The host-facing API port `8083` is **not** the address used for MVC-to-API communication inside Docker.
+
+### Verify the Running Containers (Windows PowerShell)
+
+Start Docker Desktop, then run:
 
 ```powershell
 docker info
+docker ps --filter "name=raceday-"
+docker network inspect raceday-poe-network
+docker exec raceday-mvc-final getent hosts raceday-api-new
 ```
 
-### Start RaceDay.API for Docker
-
-For the local Docker demonstration, the MVC container communicates with RaceDay.API through the Windows host.
-
-Start the API with HTTPS redirection disabled for the HTTP Docker-to-host development connection:
+Inspect the API connection configured in the MVC container:
 
 ```powershell
-$env:UseHttpsRedirection="false"
-dotnet run --project RaceDay.API --launch-profile https
+docker inspect raceday-mvc-final --format '{{range .Config.Env}}{{println .}}{{end}}' | Select-String "ApiSettings"
 ```
 
-The API remains available through:
-
-```text
-http://localhost:5226
-```
-
-HTTPS redirection remains enabled by default when the configuration override is not supplied.
-
-### Build the MVC Docker Image
-
-Run this command from the solution root:
+Check recent application logs:
 
 ```powershell
-docker build -f RaceDay.Mvc/Dockerfile -t raceday-mvc:latest .
+docker logs --tail 20 raceday-api-final
+docker logs --tail 20 raceday-mvc-final
 ```
 
-### Run the MVC Docker Container
+Open the containerized MVC application at:
 
-Run:
+```text
+http://localhost:8082
+```
+
+These commands inspect the existing local setup; they do not build, replace, or stop the containers.
+
+### Build Images from the Repository
+
+From the **solution root**, Docker images can be built using the committed Dockerfiles:
 
 ```powershell
-docker run --name raceday-mvc-container -p 8080:8080 -e ApiSettings__BaseUrl=http://host.docker.internal:5226/ raceday-mvc:latest
+docker build -f RaceDay.API/Dockerfile -t raceday-api:poe-latest .
+docker build -f RaceDay.Mvc/Dockerfile -t raceday-mvc:poe-latest .
 ```
 
-Open:
+Building an image does not automatically start a container. To reproduce the deployment on another computer, configure the API's SQL Server connection, Azure Blob Storage credentials, network, and the MVC API base URL for that environment. The existing `raceday-api-new` alias is specific to the verified local setup; it is not guaranteed to exist on another computer. Do not commit credentials or private connection strings.
 
-```text
-http://localhost:8080
-```
-
-The Dockerised MVC application communicates with the API using:
-
-```text
-http://host.docker.internal:5226/
-```
-
-`host.docker.internal` allows the Linux Docker container to communicate with RaceDay.API running on the Windows host.
-
-### Stop the Container
-
-Press:
-
-```text
-Ctrl+C
-```
-
-in the terminal running the container.
-
-### Remove the Stopped Container
-
-Before creating another container with the same name:
-
-```powershell
-docker rm raceday-mvc-container
-```
-
----
-
-## Docker Architecture
+### Docker Architecture
 
 ```text
 Browser
    |
    v
-http://localhost:8080
+http://localhost:8082
    |
    v
-RaceDay.Mvc
-Docker Container
+RaceDay.Mvc container (raceday-mvc-final)
    |
-   | HTTP
+   | HTTP over raceday-poe-network
    v
-host.docker.internal:5226
+http://raceday-api-new:8080
    |
    v
-RaceDay.API
+RaceDay.API container (raceday-api-final)
    |
-   +--------------------+
-   |                    |
-   v                    v
-SQL Server       Azure Blob Storage
+   +---------------------+
+   |                     |
+   v                     v
+SQL Server         Azure Blob Storage
 ```
 
-RaceDay.Mvc does not directly access SQL Server or Azure Blob Storage.
+`RaceDay.Mvc` communicates with the API and does not directly access SQL Server or Azure Blob Storage.
 
 ---
 
