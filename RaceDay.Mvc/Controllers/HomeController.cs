@@ -47,6 +47,43 @@ namespace RaceDay.Mvc.Controllers
                 List<EventViewModel> events =
                     await _apiClient.GetEventsAsync();
 
+                // Enrich dashboard cards with category and age eligibility data.
+                // Failure to retrieve one event's categories does not hide the other events.
+                var cards = new Dictionary<int, EventCardViewModel>();
+                ProfileViewModel? profile = null;
+                try
+                {
+                    profile = await _apiClient.GetProfileAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Unable to load participant profile for event eligibility.");
+                }
+
+                foreach (var raceEvent in events)
+                {
+                    var card = new EventCardViewModel { Event = raceEvent };
+                    if (profile?.DateOfBirth is DateOnly dob)
+                    {
+                        var eventDate = raceEvent.EventDate;
+                        int age = eventDate.Year - dob.Year;
+                        if (eventDate < dob.AddYears(age)) age--;
+                        card.ParticipantAgeOnEventDate = age;
+                    }
+
+                    try
+                    {
+                        card.Categories = await _apiClient.GetEventCategoriesAsync(raceEvent.EventId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Unable to load categories for event {EventId}.", raceEvent.EventId);
+                        ViewBag.CategoryWarning = "Some event categories could not be loaded.";
+                    }
+                    cards[raceEvent.EventId] = card;
+                }
+
+                ViewBag.EventCards = cards;
                 return View(events);
             }
             catch (Exception ex)

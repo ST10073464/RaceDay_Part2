@@ -1,47 +1,122 @@
 ﻿@model List<RaceDay.Mvc.Models.EventViewModel>
+
 @{
     ViewData["Title"] = "All Events";
+
+    var events = Model ?? new List<RaceDay.Mvc.Models.EventViewModel>();
+
+    var organiserGroups = events
+        .GroupBy(e => new
+        {
+            e.OrganiserId,
+            OrganiserName = string.IsNullOrWhiteSpace(e.CreatedBy)
+                ? "Unknown Organiser"
+                : e.CreatedBy.Trim()
+        })
+        .OrderBy(g => g.Key.OrganiserName)
+        .ThenBy(g => g.Key.OrganiserId)
+        .ToList();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h1>All Events</h1>
-        <p class="text-muted">Browse events created by all organisers. This page is read-only.</p>
+        <h1 class="fw-bold mb-1">All Events</h1>
+        <p class="text-muted mb-0">
+            Browse events created by all organisers.
+            This page is read-only.
+        </p>
     </div>
-    <a asp-controller="Organiser" asp-action="MyEvents" class="btn btn-outline-primary">My Events</a>
+
+    <a asp-controller="Organiser"
+       asp-action="MyEvents"
+       class="btn btn-outline-primary">
+        My Events
+    </a>
 </div>
 
-@if (Model == null || Model.Count == 0)
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Total Events</h6>
+                <h2 class="fw-bold mb-0">@events.Count</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Total Organisers</h6>
+                <h2 class="fw-bold mb-0">@organiserGroups.Count</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (events.Count == 0)
 {
-    <div class="alert alert-info">No events are currently available.</div>
+    <div class="alert alert-info">
+        No events are currently available.
+    </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
-                <tr>
-                    <th>Event</th>
-                    <th>Date</th>
-                    <th>Location</th>
-                    <th>Type</th>
-                    <th>Distance (km)</th>
-                    <th>Created By</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var raceEvent in Model)
-                {
-                    <tr>
-                        <td>@raceEvent.EventName</td>
-                        <td>@raceEvent.EventDate.ToString("dd MMM yyyy")</td>
-                        <td>@raceEvent.Location</td>
-                        <td>@raceEvent.EventType</td>
-                        <td>@raceEvent.DistanceKm</td>
-                        <td>@raceEvent.CreatedBy</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+    @foreach (var group in organiserGroups)
+    {
+        <section class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h4 class="fw-bold mb-0">
+                            @group.Key.OrganiserName
+                        </h4>
+                        <small class="text-muted">
+                            Organiser ID: @group.Key.OrganiserId
+                        </small>
+                    </div>
+
+                    <span class="badge bg-primary fs-6">
+                        @group.Count() @(group.Count() == 1 ? "event" : "events")
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Event</th>
+                                <th>Date</th>
+                                <th>Location</th>
+                                <th>Type</th>
+                                <th>Distance (km)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var raceEvent in group.OrderBy(e => e.EventDate))
+                            {
+                                <tr>
+                                    <td class="fw-semibold">
+                                        @raceEvent.EventName
+                                    </td>
+                                    <td>
+                                        @raceEvent.EventDate.ToString("dd MMM yyyy")
+                                    </td>
+                                    <td>@raceEvent.Location</td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            @raceEvent.EventType
+                                        </span>
+                                    </td>
+                                    <td>@raceEvent.DistanceKm</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    }
 }

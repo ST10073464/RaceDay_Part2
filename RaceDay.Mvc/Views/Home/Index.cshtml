@@ -1,4 +1,4 @@
-﻿@model List<RaceDay.Mvc.Models.EventViewModel>
+@model List<RaceDay.Mvc.Models.EventViewModel>
 
 @{
     ViewData["Title"] = "RaceDay";
@@ -269,6 +269,8 @@
 }
 else
 {
+    var eventCards = ViewBag.EventCards as Dictionary<int, RaceDay.Mvc.Models.EventCardViewModel>
+        ?? new Dictionary<int, RaceDay.Mvc.Models.EventCardViewModel>();
     <div class="py-4">
         <!-- PARTICIPANT DASHBOARD HEADER -->
         <div class="mb-4">
@@ -342,14 +344,75 @@ else
             </div>
         </div>
 
-        <!-- AVAILABLE EVENTS -->
+         @if (ViewBag.CategoryWarning != null)
+         {
+             <div class="alert alert-warning" role="alert">@ViewBag.CategoryWarning</div>
+         }
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+         <!-- AVAILABLE EVENTS AND FILTERS -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <div>
                 <h2 class="fw-bold mb-1">Available Events</h2>
-                <p class="text-muted mb-0">Select an event to view its information.</p>
+                <p class="text-muted mb-0">Find an event by name, type, location or distance.</p>
             </div>
+            <span class="badge bg-primary fs-6" id="eventCount" aria-live="polite">@(Model?.Count ?? 0) events</span>
         </div>
+
+        @if (Model != null && Model.Count > 0)
+        {
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-3 col-md-6">
+                            <label for="eventSearch" class="form-label fw-semibold">Search events</label>
+                            <input id="eventSearch" type="search" class="form-control" placeholder="Event name..." />
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="eventTypeFilter" class="form-label fw-semibold">Event type</label>
+                            <select id="eventTypeFilter" class="form-select">
+                                <option value="">All types</option>
+                                @foreach (var eventType in Model.Select(e => e.EventType?.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(t => t))
+                                {
+                                    <option value="@eventType">@eventType</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="eventLocationFilter" class="form-label fw-semibold">Location</label>
+                            <select id="eventLocationFilter" class="form-select">
+                                <option value="">All locations</option>
+                                @foreach (var location in Model.Select(e => e.Location?.Trim()).Where(l => !string.IsNullOrWhiteSpace(l)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l))
+                                {
+                                    <option value="@location">@location</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <label for="eventDistanceFilter" class="form-label fw-semibold">Maximum distance</label>
+                            <select id="eventDistanceFilter" class="form-select">
+                                <option value="">Any distance</option>
+                                <option value="5">Up to 5 km</option>
+                                <option value="10">Up to 10 km</option>
+                                <option value="21">Up to 21 km</option>
+                                <option value="50">Up to 50 km</option>
+                                <option value="100">Up to 100 km</option>
+                            </select>
+                        </div>
+                         <div class="col-lg-12">
+                             <div class="form-check">
+                                 <input class="form-check-input" type="checkbox" id="eligibleOnlyFilter" />
+                                 <label class="form-check-label fw-semibold" for="eligibleOnlyFilter">Eligible events only</label>
+                                 <div class="form-text">Show events with at least one category matching your age on event day.</div>
+                             </div>
+                         </div>
+                         <div class="col-12">
+    <button id="clearEventFilters" type="button" class="btn btn-outline-secondary" style="min-width: 100px; white-space: nowrap;">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="noMatchingEvents" class="alert alert-info d-none" role="status">No events match your filters. Try clearing one or more filters.</div>
+        }
 
         @if (Model == null || Model.Count == 0)
         {
@@ -360,7 +423,17 @@ else
             <div class="row">
                 @foreach (var raceEvent in Model)
                 {
-                    <div class="col-lg-4 col-md-6 mb-4">
+                    eventCards.TryGetValue(raceEvent.EventId, out var eventCard);
+                    var categories = eventCard?.Categories ?? new List<RaceDay.Mvc.Models.CategoryViewModel>();
+                    var participantAge = eventCard?.ParticipantAgeOnEventDate;
+                    var eligibleEvent = eventCard?.HasEligibleCategory == true;
+                    <div class="col-lg-4 col-md-6 mb-4 rd-filterable-event"
+                         data-eligible="@(eligibleEvent ? "true" : "false")"
+                         data-name="@raceEvent.EventName"
+
+                         data-type="@raceEvent.EventType"
+                         data-location="@raceEvent.Location"
+                         data-distance="@raceEvent.DistanceKm.ToString(System.Globalization.CultureInfo.InvariantCulture)">
                         <div class="card shadow-sm h-100">
                             @if (!string.IsNullOrWhiteSpace(raceEvent.BannerImageUrl))
                             {
@@ -381,8 +454,42 @@ else
                                     <p class="mb-2"><strong>Location:</strong> @raceEvent.Location</p>
                                     <p class="mb-2"><strong>Distance:</strong> @raceEvent.DistanceKm km</p>
                                 </div>
-                                <div class="mt-auto pt-3">
-                                    <a asp-controller="Home"
+                                 <div class="mt-3">
+                                     <h6 class="fw-bold mb-2">Event categories</h6>
+                                     @if (categories.Count == 0)
+                                     {
+                                         <p class="text-muted small mb-2">No categories available yet.</p>
+                                     }
+                                     else
+                                     {
+                                         @foreach (var category in categories)
+                                         {
+                                             bool canEnrol = participantAge.HasValue &&
+                                                 participantAge.Value >= category.MinAge &&
+                                                 participantAge.Value <= category.MaxAge;
+                                             <div class="border rounded p-2 mb-2 small">
+                                                 <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                                     <strong>@category.CategoryName</strong>
+                                                     @if (!participantAge.HasValue)
+                                                     {
+                                                         <span class="badge bg-secondary">Age unavailable</span>
+                                                     }
+                                                     else if (canEnrol)
+                                                     {
+                                                         <span class="badge bg-success">Eligible</span>
+                                                     }
+                                                     else
+                                                     {
+                                                         <span class="badge bg-secondary">Not eligible</span>
+                                                     }
+                                                 </div>
+                                                 <div class="text-muted">Ages @category.MinAge–@category.MaxAge · @category.DistanceKm km</div>
+                                             </div>
+                                         }
+                                     }
+                                 </div>
+                                 <div class="mt-auto pt-3">
+                                     <a asp-controller="Home"
                                        asp-action="EventDetails"
                                        asp-route-id="@raceEvent.EventId"
                                        class="btn btn-primary w-100">View Event</a>
@@ -396,3 +503,49 @@ else
         }
     </div>
 }
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cards = Array.from(document.querySelectorAll('.rd-filterable-event'));
+        if (!cards.length) return;
+        const search = document.getElementById('eventSearch');
+        const type = document.getElementById('eventTypeFilter');
+        const location = document.getElementById('eventLocationFilter');
+        const distance = document.getElementById('eventDistanceFilter');
+        const count = document.getElementById('eventCount');
+        const empty = document.getElementById('noMatchingEvents');
+         const clear = document.getElementById('clearEventFilters');
+         const eligibleOnly = document.getElementById('eligibleOnlyFilter');
+        const norm = value => (value || '').trim().toLocaleLowerCase();
+
+        function applyFilters() {
+            let visible = 0;
+            cards.forEach(card => {
+                const nameMatch = norm(card.dataset.name).includes(norm(search.value));
+                const typeMatch = !type.value || norm(card.dataset.type) === norm(type.value);
+                const locationMatch = !location.value || norm(card.dataset.location) === norm(location.value);
+                const eventDistance = Number(card.dataset.distance);
+                const distanceMatch = !distance.value || (Number.isFinite(eventDistance) && eventDistance <= Number(distance.value));
+                 const eligibilityMatch = !eligibleOnly.checked || card.dataset.eligible === 'true';
+                 const show = nameMatch && typeMatch && locationMatch && distanceMatch && eligibilityMatch;
+                card.classList.toggle('d-none', !show);
+                if (show) visible++;
+            });
+            count.textContent = `${visible} of ${cards.length} events`;
+            empty.classList.toggle('d-none', visible !== 0);
+        }
+
+         [search, type, location, distance, eligibleOnly].forEach(control => {
+            control.addEventListener(control === search ? 'input' : 'change', applyFilters);
+        });
+        clear.addEventListener('click', function () {
+            search.value = '';
+            type.value = '';
+            location.value = '';
+             distance.value = '';
+             eligibleOnly.checked = false;
+             applyFilters();
+        });
+        applyFilters();
+    });
+</script>
