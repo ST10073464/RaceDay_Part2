@@ -16,6 +16,17 @@
             e.EnrolmentStatus,
             "Cancelled",
             StringComparison.OrdinalIgnoreCase)) ?? 0;
+
+    // Navigation source:
+    // EditEvent = opened from My Events > Edit Event
+    // Dashboard = opened from Organiser Dashboard
+    string returnTo = ViewBag.ReturnTo as string
+        ?? Context.Request.Query["returnTo"].ToString();
+
+    bool fromEditEvent = string.Equals(
+        returnTo,
+        "EditEvent",
+        StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="container py-4">
@@ -40,6 +51,7 @@
             <a asp-controller="Organiser"
                asp-action="ManageCategories"
                asp-route-eventId="@Model.EventId"
+               asp-route-returnTo="EventParticipants"
                class="btn btn-outline-primary">
                 Categories
             </a>
@@ -51,11 +63,23 @@
                 Event Results
             </a>
 
-            <a asp-controller="Organiser"
-               asp-action="Index"
-               class="btn btn-outline-secondary">
-                Back to Dashboard
-            </a>
+            @if (fromEditEvent)
+            {
+                <a asp-controller="Organiser"
+                   asp-action="EditEvent"
+                   asp-route-id="@Model.EventId"
+                   class="btn btn-outline-secondary">
+                    Back to Edit Event
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Organiser"
+                   asp-action="Index"
+                   class="btn btn-outline-secondary">
+                    Back to Dashboard
+                </a>
+            }
 
         </div>
     </div>
@@ -66,7 +90,9 @@
         <div class="col-md-4">
             <div class="card shadow-sm h-100 border-0">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Total Enrolments</p>
+                    <p class="text-muted mb-1">
+                        Total Enrolments
+                    </p>
                     <h2 class="fw-bold mb-0">
                         @totalParticipants
                     </h2>
@@ -77,7 +103,9 @@
         <div class="col-md-4">
             <div class="card shadow-sm h-100 border-0">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Confirmed</p>
+                    <p class="text-muted mb-1">
+                        Confirmed
+                    </p>
                     <h2 class="fw-bold mb-0 text-success">
                         @confirmedParticipants
                     </h2>
@@ -88,7 +116,9 @@
         <div class="col-md-4">
             <div class="card shadow-sm h-100 border-0">
                 <div class="card-body">
-                    <p class="text-muted mb-1">Cancelled</p>
+                    <p class="text-muted mb-1">
+                        Cancelled
+                    </p>
                     <h2 class="fw-bold mb-0">
                         @cancelledParticipants
                     </h2>
@@ -107,6 +137,7 @@
 
                 <h5 class="fw-bold mb-0">
                     Participant Enrolments
+
                     <span class="badge bg-primary ms-2">
                         @totalParticipants
                     </span>
@@ -124,7 +155,8 @@
 
         <div class="card-body">
 
-            @if (Model.Enrolments == null || Model.Enrolments.Count == 0)
+            @if (Model.Enrolments == null ||
+                 Model.Enrolments.Count == 0)
             {
                 <div class="text-center py-5">
 
@@ -261,9 +293,14 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
 
-        const searchInput = document.getElementById("participantSearch");
-        const rows = document.querySelectorAll(".participant-row");
-        const noResults = document.getElementById("noSearchResults");
+        const searchInput =
+            document.getElementById("participantSearch");
+
+        const rows =
+            document.querySelectorAll(".participant-row");
+
+        const noResults =
+            document.getElementById("noSearchResults");
 
         if (!searchInput || rows.length === 0) {
             return;
@@ -271,13 +308,18 @@
 
         searchInput.addEventListener("input", function () {
 
-            const searchTerm = this.value.trim().toLowerCase();
+            const searchTerm =
+                this.value.trim().toLowerCase();
+
             let visibleCount = 0;
 
             rows.forEach(function (row) {
 
-                const rowText = row.textContent.toLowerCase();
-                const matches = rowText.includes(searchTerm);
+                const rowText =
+                    row.textContent.toLowerCase();
+
+                const matches =
+                    rowText.includes(searchTerm);
 
                 row.classList.toggle("d-none", !matches);
 

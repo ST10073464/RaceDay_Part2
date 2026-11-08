@@ -54,6 +54,7 @@ public class EventsController : ControllerBase
             BannerImageUrl = ResolveBannerUrlSafely(e.BannerImageUrl),
 
             e.OrganiserId,
+            e.CreatedAt,
             CreatedBy = organisers.TryGetValue(e.OrganiserId, out var organiser)
                 ? (string.IsNullOrWhiteSpace(($"{organiser.FirstName} {organiser.LastName}").Trim())
                     ? organiser.Email
@@ -135,7 +136,8 @@ public class EventsController : ControllerBase
                 e.DistanceKm,
                 e.EventType,
                 e.BannerImageUrl,
-                e.OrganiserId
+                e.OrganiserId,
+                e.CreatedAt
             })
             .ToListAsync();
 
@@ -175,6 +177,7 @@ public class EventsController : ControllerBase
             BannerImageUrl = bannerImageUrl,
 
             existingEvent.OrganiserId,
+            existingEvent.CreatedAt,
 
             Categories = existingEvent.Categories
                 .Select(c => new

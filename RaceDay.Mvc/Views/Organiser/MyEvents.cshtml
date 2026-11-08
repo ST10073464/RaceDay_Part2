@@ -2,6 +2,26 @@
 
 @{
     ViewData["Title"] = "My Events";
+
+    var events = Model ?? new List<RaceDay.Mvc.Models.EventViewModel>();
+    var today = DateOnly.FromDateTime(DateTime.Today);
+
+    var totalEvents = events.Count;
+    var upcomingEvents = events.Count(e => e.EventDate >= today);
+    var pastEvents = events.Count(e => e.EventDate < today);
+
+    var nextEvent = events
+        .Where(e => e.EventDate >= today)
+        .OrderBy(e => e.EventDate)
+        .FirstOrDefault();
+
+    var eventCategories = ViewBag.EventCategories as
+        Dictionary<int, List<RaceDay.Mvc.Models.CategoryViewModel>>
+        ?? new Dictionary<int, List<RaceDay.Mvc.Models.CategoryViewModel>>();
+
+    var eventEnrolments = ViewBag.EventEnrolments as
+        Dictionary<int, List<RaceDay.Mvc.Models.EventEnrolmentViewModel>>
+        ?? new Dictionary<int, List<RaceDay.Mvc.Models.EventEnrolmentViewModel>>();
 }
 
 <div class="container mt-4">
@@ -21,6 +41,13 @@
         </a>
     </div>
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
     @if (ViewBag.EventError != null)
     {
         <div class="alert alert-danger">
@@ -28,7 +55,61 @@
         </div>
     }
 
-    @if (Model == null || Model.Count == 0)
+    <!-- Event summary -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <small class="text-muted">Total Events</small>
+                    <h3 class="text-primary mb-0">@totalEvents</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-success h-100">
+                <div class="card-body">
+                    <small class="text-muted">Upcoming Events</small>
+                    <h3 class="text-success mb-0">@upcomingEvents</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-secondary h-100">
+                <div class="card-body">
+                    <small class="text-muted">Past Events</small>
+                    <h3 class="text-secondary mb-0">@pastEvents</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Next upcoming event -->
+    @if (nextEvent != null)
+    {
+        <div class="alert alert-info mb-4">
+            <strong>Next Upcoming Event:</strong>
+            @nextEvent.EventName
+            <br />
+            <strong>Date:</strong>
+            @nextEvent.EventDate.ToString("dd MMMM yyyy")
+            <br />
+            <strong>Location:</strong>
+            @nextEvent.Location
+        </div>
+    }
+    else if (totalEvents > 0)
+    {
+        <div class="alert alert-secondary mb-4">
+            There are no upcoming events currently scheduled.
+        </div>
+    }
+
+    <!-- No events -->
+    @if (totalEvents == 0)
     {
         <div class="card shadow-sm">
             <div class="card-body text-center py-5">
@@ -50,19 +131,46 @@
     }
     else
     {
+        <!-- Event cards -->
         <div class="row g-4">
 
-            @foreach (var raceEvent in Model)
+            @foreach (var raceEvent in events.OrderBy(e => e.EventDate))
             {
-                <div class="col-md-6 col-lg-4">
+                var isUpcoming = raceEvent.EventDate >= today;
 
+                var categories =
+                    eventCategories.TryGetValue(
+                        raceEvent.EventId,
+                        out var categoryList)
+                    ? categoryList
+                    : new List<RaceDay.Mvc.Models.CategoryViewModel>();
+
+                var enrolmentsLoaded =
+                    eventEnrolments.TryGetValue(
+                        raceEvent.EventId,
+                        out var enrolmentList)
+                    && enrolmentList != null;
+
+                var totalEnrolments =
+                    enrolmentsLoaded ? enrolmentList!.Count : 0;
+
+                // API stores creation timestamps in UTC.
+                // Convert to South African Standard Time (UTC+2).
+                DateTime? createdOnSast = null;
+
+                if (raceEvent.CreatedAt.HasValue &&
+                    raceEvent.CreatedAt.Value != default(DateTime))
+                {
+                    createdOnSast =
+                        raceEvent.CreatedAt.Value.AddHours(2);
+                }
+
+                <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm">
 
                         <div class="card-body">
 
-                            <div class="d-flex justify-content-between
-                                        align-items-start mb-3">
-
+                            <div class="d-flex justify-content-between align-items-start mb-3">
                                 <h5 class="card-title fw-bold mb-0">
                                     @raceEvent.EventName
                                 </h5>
@@ -70,11 +178,24 @@
                                 <span class="badge bg-primary">
                                     @raceEvent.EventType
                                 </span>
-
                             </div>
 
-                            @if (!string.IsNullOrWhiteSpace(
-                                raceEvent.Description))
+                            <div class="mb-3">
+                                @if (isUpcoming)
+                                {
+                                    <span class="badge bg-success">
+                                        Upcoming
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        Past Event
+                                    </span>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(raceEvent.Description))
                             {
                                 <p class="card-text text-muted">
                                     @raceEvent.Description
@@ -86,6 +207,22 @@
                             <p class="mb-2">
                                 <strong>Date:</strong>
                                 @raceEvent.EventDate.ToString("dd MMMM yyyy")
+                            </p>
+
+                            <p class="mb-2">
+                                <strong>Created On:</strong>
+
+                                @if (createdOnSast.HasValue)
+                                {
+                                    @(createdOnSast.Value.ToString("dd MMMM yyyy HH:mm"))
+                                    <span class="text-muted">SAST</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">
+                                        Not available
+                                    </span>
+                                }
                             </p>
 
                             <p class="mb-2">
@@ -103,9 +240,79 @@
                                 @raceEvent.EventId
                             </p>
 
+                            <hr />
+
+                            <!-- Categories and enrolments -->
+                            <div class="row g-2">
+
+                                <div class="col-6">
+                                    <div class="border rounded p-3 h-100">
+                                        <small class="text-muted d-block">
+                                            Categories
+                                        </small>
+
+                                        <h4 class="mb-0 text-primary">
+                                            @categories.Count
+                                        </h4>
+                                    </div>
+                                </div>
+
+                                <div class="col-6">
+                                    <div class="border rounded p-3 h-100">
+                                        <small class="text-muted d-block">
+                                            Enrolments
+                                        </small>
+
+                                        @if (enrolmentsLoaded)
+                                        {
+                                            <h4 class="mb-0 text-primary">
+                                                @totalEnrolments
+                                            </h4>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-warning"
+                                                  title="Enrolment information could not be loaded">
+                                                Unavailable
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+
+                            </div>
+
                         </div>
 
+                        
                         <div class="card-footer bg-white">
+
+                            @if (!enrolmentsLoaded)
+                            {
+                                <div class="alert alert-warning small mb-3">
+                                    <strong>Deletion unavailable</strong>
+                                    <div>
+                                        Participant enrolments could not be verified.
+                                        This event cannot be deleted until the information is available.
+                                    </div>
+                                </div>
+                            }
+                            else if (totalEnrolments > 0)
+                            {
+                                <div class="alert alert-danger small mb-3">
+                                    <strong>Deletion restricted</strong>
+                                    <div>
+                                        This event cannot be deleted because
+                                        @totalEnrolments participant(s) are already enrolled.
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-success small mb-3">
+                                    <strong>Deletion permitted:</strong>
+                                    No participants are enrolled in this event.
+                                </div>
+                            }
 
                             <div class="d-grid gap-2">
 
@@ -116,12 +323,40 @@
                                     Manage Event
                                 </a>
 
-                            </div>
+                                @if (enrolmentsLoaded && totalEnrolments == 0)
+                                {
+                                    <form asp-controller="Organiser"
+                                          asp-action="DeleteEvent"
+                                          method="post"
+                                          onsubmit="return confirm('Are you sure you want to permanently delete this event? This action cannot be undone.');">
 
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="eventId"
+                                               value="@raceEvent.EventId" />
+
+                                        <button type="submit"
+                                                class="btn btn-outline-danger w-100">
+                                            Delete Event
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="btn btn-outline-danger"
+                                            disabled
+                                            title="Events with enrolments, or unverified enrolments, cannot be deleted.">
+                                        Delete Event — Unavailable
+                                    </button>
+                                }
+
+                            </div>
                         </div>
 
-                    </div>
 
+                    </div>
                 </div>
             }
 

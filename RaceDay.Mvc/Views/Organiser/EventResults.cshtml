@@ -2,15 +2,25 @@
 
 @{
     ViewData["Title"] = "Event Results";
+
+    var results = Model.Results;
+
+    var totalResults = results?.Count ?? 0;
+
+    var returnTo = Context.Request.Query["returnTo"].ToString();
+
+    bool fromEditEvent = string.Equals(
+        returnTo,
+        "EditEvent",
+        StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between
-                align-items-start mb-4">
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
 
         <div>
-
             <h1 class="fw-bold mb-1">
                 Event Results
             </h1>
@@ -20,65 +30,65 @@
             </h5>
 
             <p class="text-muted mb-0">
-
                 @Model.EventDate.ToString("dd MMMM yyyy")
-                ·
+                &bull;
                 @Model.Location
-
             </p>
-
         </div>
 
-
-        <div class="d-flex gap-2">
+        <!-- NAVIGATION BUTTONS -->
+        <div class="d-flex flex-wrap gap-2">
 
             <a asp-controller="Organiser"
                asp-action="EventParticipants"
                asp-route-eventId="@Model.EventId"
+               asp-route-returnTo="EditEvent"
                class="btn btn-outline-primary">
-
                 Participants
-
             </a>
 
-            <a asp-controller="Organiser"
-               asp-action="MyEvents"
-               class="btn btn-outline-secondary">
-
-                Back to My Events
-
-            </a>
+            @if (fromEditEvent)
+            {
+                <a asp-controller="Organiser"
+                   asp-action="EditEvent"
+                   asp-route-id="@Model.EventId"
+                   class="btn btn-outline-secondary">
+                    Back to Edit Event
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Organiser"
+                   asp-action="MyEvents"
+                   class="btn btn-outline-secondary">
+                    Back to My Events
+                </a>
+            }
 
         </div>
-
     </div>
 
-
+    <!-- RESULTS CARD -->
     <div class="card shadow-sm">
 
         <div class="card-header bg-white">
 
-            <div class="d-flex justify-content-between
-                        align-items-center">
+            <div class="d-flex justify-content-between align-items-center">
 
                 <h5 class="mb-0">
                     Published Results
                 </h5>
 
                 <span class="badge bg-secondary">
-                    @Model.Results.Count
+                    @totalResults
                 </span>
 
             </div>
-
         </div>
-
 
         <div class="card-body">
 
-            @if (
-                Model.Results == null ||
-                Model.Results.Count == 0)
+            @if (results == null || results.Count == 0)
             {
                 <div class="text-center py-5">
 
@@ -87,10 +97,7 @@
                     </h5>
 
                     <p class="text-muted mb-0">
-
-                        Results will appear here
-                        after they are recorded.
-
+                        Results will appear here after they are recorded.
                     </p>
 
                 </div>
@@ -99,38 +106,17 @@
             {
                 <div class="table-responsive">
 
-                    <table class="table
-                                  table-hover
-                                  align-middle">
+                    <table class="table table-hover align-middle">
 
                         <thead>
-
                             <tr>
-
-                                <th>
-                                    Position
-                                </th>
-
-                                <th>
-                                    Participant
-                                </th>
-
-                                <th>
-                                    Category
-                                </th>
-
-                                <th>
-                                    Finish Time
-                                </th>
-
-                                <th>
-                                    Published
-                                </th>
-
+                                <th>Position</th>
+                                <th>Participant</th>
+                                <th>Category</th>
+                                <th>Finish Time</th>
+                                <th>Published</th>
                             </tr>
-
                         </thead>
-
 
                         <tbody>
 
@@ -138,46 +124,34 @@
                                 int position = 1;
                             }
 
-                            @foreach (
-                                var result
-                                in Model.Results)
+                            @foreach (var result in results)
                             {
                                 <tr>
 
                                     <td>
-
                                         <strong>
                                             @position
                                         </strong>
-
                                     </td>
 
-
                                     <td>
-
                                         <strong>
                                             @result.ParticipantName
                                         </strong>
-
                                     </td>
-
 
                                     <td>
-
                                         @result.CategoryName
-
                                     </td>
-
 
                                     <td>
                                         <strong>
-                                            @result.FinishTime.ToString("hh\\:mm\\:ss")
+                                            @result.FinishTime.ToString(@"hh\:mm\:ss")
                                         </strong>
                                     </td>
 
-
                                     <td>
-                                        @(result.PublishedAt.ToString("dd MMM yyyy HH:mm"))
+                                        @result.PublishedAt.ToString("dd MMM yyyy HH:mm")
                                     </td>
 
                                 </tr>
@@ -186,14 +160,12 @@
                             }
 
                         </tbody>
-
                     </table>
 
                 </div>
             }
 
         </div>
-
     </div>
 
 </div>

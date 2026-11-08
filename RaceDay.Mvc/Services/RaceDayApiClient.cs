@@ -256,6 +256,19 @@ public class RaceDayApiClient
             model);
     }
 
+
+    // ---------------------------------------------------------
+    // DELETE EVENT
+    // ---------------------------------------------------------
+    public async Task<HttpResponseMessage> DeleteEventAsync(
+        int eventId)
+    {
+        return await SendAsync(
+            HttpMethod.Delete,
+            $"api/events/{eventId}");
+    }
+
+
     public async Task<HttpResponseMessage> CreateCategoryAsync(
     ManageCategoriesViewModel model)
     {

@@ -214,19 +214,25 @@
                                     Manage Categories
                                 </a>
 
+                                
                                 <a asp-controller="Organiser"
                                    asp-action="EventParticipants"
                                    asp-route-eventId="@Model.EventId"
+                                   asp-route-returnTo="EditEvent"
                                    class="btn btn-outline-primary">
                                     Participants
                                 </a>
 
+
+                                
                                 <a asp-controller="Organiser"
                                    asp-action="EventResults"
                                    asp-route-eventId="@Model.EventId"
+                                   asp-route-returnTo="EditEvent"
                                    class="btn btn-outline-success">
                                     Event Results
                                 </a>
+
 
                             </div>
 

@@ -137,40 +137,63 @@ namespace RaceDay.Mvc.Controllers
         }
 
         // ORGANISER - MY EVENTS
+        // Load categories and enrolments for each event tile.
         public async Task<IActionResult> MyEvents()
         {
-            var role =
-                HttpContext.Session.GetString("Role");
-
-            if (!string.Equals(
-                role,
-                "Organiser",
-                StringComparison.OrdinalIgnoreCase))
-            {
-                return RedirectToAction(
-                    "Login",
-                    "Account");
-            }
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
 
             try
             {
-                List<EventViewModel> events =
-                    await _apiClient.GetMyEventsAsync();
+                List<EventViewModel> events = await _apiClient.GetMyEventsAsync();
+                var eventCategories = new Dictionary<int, List<CategoryViewModel>>();
+                var eventEnrolments = new Dictionary<int, List<EventEnrolmentViewModel>>();
 
+                foreach (var raceEvent in events)
+                {
+                    // A failure to load one event's supplementary information
+                    // must not hide all of the organiser's events.
+                    try
+                    {
+                        eventCategories[raceEvent.EventId] =
+                            await _apiClient.GetEventCategoriesAsync(raceEvent.EventId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "Unable to load categories for event {EventId}.", raceEvent.EventId);
+                        eventCategories[raceEvent.EventId] = new List<CategoryViewModel>();
+                    }
+
+                    try
+                    {
+                        eventEnrolments[raceEvent.EventId] =
+                            await _apiClient.GetEventEnrolmentsAsync(raceEvent.EventId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "Unable to load enrolments for event {EventId}.", raceEvent.EventId);
+                        // Null means unknown, NOT zero. The view must not
+                        // incorrectly claim the event is safe to delete.
+                        eventEnrolments[raceEvent.EventId] = null!;
+                    }
+                }
+
+                ViewBag.EventCategories = eventCategories;
+                ViewBag.EventEnrolments = eventEnrolments;
                 return View(events);
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Unable to load organiser events.");
-
-                ViewBag.EventError =
-                    "Your events could not be loaded at this time.";
-
+                _logger.LogError(ex, "Unable to load organiser events.");
+                ViewBag.EventError = "Your events could not be loaded.";
+                ViewBag.EventCategories = new Dictionary<int, List<CategoryViewModel>>();
+                ViewBag.EventEnrolments = new Dictionary<int, List<EventEnrolmentViewModel>>();
                 return View(new List<EventViewModel>());
             }
         }
+
 
         // ORGANISER - CREATE EVENT
         [HttpGet]
@@ -199,6 +222,7 @@ namespace RaceDay.Mvc.Controllers
             return View(model);
         }
 
+
         // ORGANISER - CREATE EVENT SUBMISSION
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -207,18 +231,37 @@ namespace RaceDay.Mvc.Controllers
             if (!IsOrganiser())
                 return RedirectToAction("Login", "Account");
 
+            // Do not allow new events to be scheduled in the past.
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            if (model.EventDate < today)
+            {
+                ModelState.AddModelError(
+                    nameof(model.EventDate),
+                    "Event date cannot be in the past. Select today or a future date.");
+            }
+
             if (model.BannerImage != null)
             {
                 if (!string.IsNullOrWhiteSpace(model.BannerImageUrl))
-                    ModelState.AddModelError(nameof(model.BannerImage),
+                {
+                    ModelState.AddModelError(
+                        nameof(model.BannerImage),
                         "Choose either an image URL or a computer file, not both.");
+                }
 
-                string extension = Path.GetExtension(model.BannerImage.FileName).ToLowerInvariant();
+                string extension = Path.GetExtension(
+                    model.BannerImage.FileName).ToLowerInvariant();
+
                 if (model.BannerImage.Length == 0 ||
                     model.BannerImage.Length > 5 * 1024 * 1024 ||
-                    !new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension))
-                    ModelState.AddModelError(nameof(model.BannerImage),
+                    !new[] { ".jpg", ".jpeg", ".png", ".webp" }
+                        .Contains(extension))
+                {
+                    ModelState.AddModelError(
+                        nameof(model.BannerImage),
                         "Select a JPG, JPEG, PNG or WEBP image of 5 MB or less.");
+                }
             }
 
             if (!ModelState.IsValid)
@@ -226,64 +269,123 @@ namespace RaceDay.Mvc.Controllers
 
             try
             {
-                using var response = await _apiClient.CreateEventAsync(model);
+                using var response =
+                    await _apiClient.CreateEventAsync(model);
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    string message = await response.Content.ReadAsStringAsync();
-                    ModelState.AddModelError(string.Empty,
+                    string message =
+                        await response.Content.ReadAsStringAsync();
+
+                    ModelState.AddModelError(
+                        string.Empty,
                         string.IsNullOrWhiteSpace(message)
                             ? "The event could not be created."
-                            : message);
+                            : GetApiErrorMessage(
+                                message,
+                                "The event could not be created."));
+
                     return View(model);
                 }
 
+                // Read the event ID for every successful creation,
+                // regardless of whether a banner was supplied.
+                int eventId = 0;
+
+                string json =
+                    await response.Content.ReadAsStringAsync();
+
+                try
+                {
+                    using var document =
+                        System.Text.Json.JsonDocument.Parse(json);
+
+                    if (document.RootElement.TryGetProperty(
+                        "eventId", out var idElement))
+                    {
+                        idElement.TryGetInt32(out eventId);
+                    }
+                }
+                catch (System.Text.Json.JsonException ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Event created but the API response was not valid JSON.");
+                }
+
+                if (eventId <= 0)
+                {
+                    TempData["SuccessMessage"] =
+                        "Event created, but its ID could not be read. " +
+                        "Open the event from My Events to add categories.";
+
+                    return RedirectToAction(nameof(MyEvents));
+                }
+
+                string successMessage =
+                    "Event created successfully. " +
+                    "You can now add categories for participants.";
+
+                // Upload the banner if one was selected.
                 if (model.BannerImage != null)
                 {
-                    // The API's POST /api/events returns { eventId: ... }.
-                    string json = await response.Content.ReadAsStringAsync();
-                    using var document = System.Text.Json.JsonDocument.Parse(json);
-                    if (!document.RootElement.TryGetProperty("eventId", out var idElement) ||
-                        !idElement.TryGetInt32(out int eventId) || eventId <= 0)
-                    {
-                        TempData["SuccessMessage"] =
-                            "Event created, but its ID could not be read. Upload the banner from Edit Event.";
-                        return RedirectToAction(nameof(MyEvents));
-                    }
-
                     try
                     {
-                        using var uploadResponse = await _apiClient.UploadEventBannerAsync(
-                            eventId, model.BannerImage);
+                        using var uploadResponse =
+                            await _apiClient.UploadEventBannerAsync(
+                                eventId,
+                                model.BannerImage);
+
                         if (!uploadResponse.IsSuccessStatusCode)
                         {
-                            _logger.LogWarning("Banner upload failed for event {EventId}: {Status}",
-                                eventId, uploadResponse.StatusCode);
-                            TempData["SuccessMessage"] =
-                                "Event created, but the banner upload failed. Open Edit Event to retry.";
-                            return RedirectToAction(nameof(MyEvents));
+                            _logger.LogWarning(
+                                "Banner upload failed for event {EventId}: {Status}",
+                                eventId,
+                                uploadResponse.StatusCode);
+
+                            successMessage =
+                                "Event created successfully, but the banner " +
+                                "upload failed. You can retry from Edit Event.";
                         }
                     }
                     catch (Exception uploadException)
                     {
-                        _logger.LogError(uploadException,
-                            "Banner upload failed after creating event {EventId}", eventId);
-                        TempData["SuccessMessage"] =
-                            "Event created, but the banner upload failed. Open Edit Event to retry.";
-                        return RedirectToAction(nameof(MyEvents));
+                        _logger.LogError(
+                            uploadException,
+                            "Banner upload failed for event {EventId}",
+                            eventId);
+
+                        successMessage =
+                            "Event created successfully, but the banner " +
+                            "upload failed. You can retry from Edit Event.";
                     }
                 }
 
-                TempData["SuccessMessage"] = "Event created successfully.";
-                return RedirectToAction(nameof(MyEvents));
+                TempData["SuccessMessage"] = successMessage;
+
+                // Continue to category setup for the new event.
+                return RedirectToAction(
+                    nameof(ManageCategories),
+                    new
+                    {
+                        eventId = eventId,
+                        returnTo = "EditEvent"
+                    });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to create organiser event.");
-                ModelState.AddModelError(string.Empty,
+                _logger.LogError(
+                    ex,
+                    "Unable to create organiser event.");
+
+                ModelState.AddModelError(
+                    string.Empty,
                     "The event could not be created at this time.");
+
                 return View(model);
             }
         }
+
 
         // ORGANISER - EDIT EVENT
         [HttpGet]
@@ -447,12 +549,113 @@ namespace RaceDay.Mvc.Controllers
             }
         }
 
+
+        // =========================================================
+        // ORGANISER - DELETE EVENT
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteEvent(int eventId)
+        {
+            if (!IsOrganiser())
+                return RedirectToAction("Login", "Account");
+
+            if (!await OwnsEventAsync(eventId))
+                return NotFound();
+
+            try
+            {
+                // Never delete if enrolments cannot be verified.
+                var enrolments =
+                    await _apiClient.GetEventEnrolmentsAsync(eventId);
+
+                if (enrolments == null)
+                {
+                    TempData["ErrorMessage"] =
+                        "Deletion is unavailable because participant enrolments could not be verified.";
+
+                    return RedirectToAction(
+                        nameof(EditEvent),
+                        new { id = eventId });
+                }
+
+                if (enrolments.Count > 0)
+                {
+                    TempData["ErrorMessage"] =
+                        "This event cannot be deleted because participants are already enrolled.";
+
+                    return RedirectToAction(
+                        nameof(EditEvent),
+                        new { id = eventId });
+                }
+
+                using var response =
+                    await _apiClient.DeleteEventAsync(eventId);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] =
+                        "Event deleted successfully.";
+
+                    return RedirectToAction(nameof(MyEvents));
+                }
+
+                if (response.StatusCode ==
+                    System.Net.HttpStatusCode.Conflict)
+                {
+                    TempData["ErrorMessage"] =
+                        "This event cannot be deleted because participants are already enrolled.";
+                }
+                else if (response.StatusCode ==
+                    System.Net.HttpStatusCode.Forbidden)
+                {
+                    TempData["ErrorMessage"] =
+                        "You are not authorised to delete this event.";
+                }
+                else if (response.StatusCode ==
+                    System.Net.HttpStatusCode.NotFound)
+                {
+                    TempData["ErrorMessage"] =
+                        "The event could not be found.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] =
+                        "The event could not be deleted.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unable to delete event {EventId}.",
+                    eventId);
+
+                TempData["ErrorMessage"] =
+                    "Deletion could not be completed. Please try again.";
+            }
+
+            return RedirectToAction(
+                nameof(EditEvent),
+                new { id = eventId });
+        }
+
+
+
         // =========================================================
         // ORGANISER - MANAGE EVENT CATEGORIES
         // =========================================================
         [HttpGet]
-        public async Task<IActionResult> ManageCategories(int eventId)
+        public async Task<IActionResult> ManageCategories(
+            int eventId,
+            string? returnTo = null)
         {
+            ViewBag.ReturnTo =
+                string.Equals(returnTo, "EventParticipants",
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "EventParticipants"
+                    : "EditEvent";
+
             // Reject direct URL access and forged submissions for events owned by another organiser.
             if (!IsOrganiser())
                 return RedirectToAction("Login", "Account");
@@ -526,7 +729,8 @@ namespace RaceDay.Mvc.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCategory(
-            ManageCategoriesViewModel model)
+            ManageCategoriesViewModel model,
+            string? returnTo = null)
         {
             // Reject direct URL access and forged submissions for events owned by another organiser.
             if (!IsOrganiser())
@@ -589,7 +793,8 @@ namespace RaceDay.Mvc.Controllers
                         nameof(ManageCategories),
                         new
                         {
-                            eventId = model.EventId
+                            eventId = model.EventId,
+                            returnTo
                         });
                 }
 
@@ -639,7 +844,8 @@ namespace RaceDay.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCategory(
             int categoryId,
-            int eventId)
+            int eventId,
+            string? returnTo = null)
         {
             // Reject direct URL access and forged submissions for events owned by another organiser.
             if (!IsOrganiser())
@@ -719,7 +925,8 @@ namespace RaceDay.Mvc.Controllers
                 nameof(ManageCategories),
                 new
                 {
-                    eventId
+                    eventId,
+                    returnTo
                 });
         }
 
@@ -1076,8 +1283,12 @@ namespace RaceDay.Mvc.Controllers
         // ORGANISER - EVENT PARTICIPANTS
         // =========================================================
         [HttpGet]
-        public async Task<IActionResult> EventParticipants(int eventId)
+        public async Task<IActionResult> EventParticipants(
+            int eventId,
+            string? returnTo = null)
         {
+            ViewBag.ReturnTo = returnTo;
+
             // Reject direct URL access and forged submissions for events owned by another organiser.
             if (!IsOrganiser())
                 return RedirectToAction("Login", "Account");
@@ -1140,6 +1351,12 @@ namespace RaceDay.Mvc.Controllers
                                     e => e.ParticipantName)
                                 .ToList()
                     };
+
+                // Only permit the two known navigation destinations.
+                ViewBag.ParticipantsReturnTo =
+                    string.Equals(returnTo, "EditEvent", StringComparison.OrdinalIgnoreCase)
+                        ? "EditEvent"
+                        : "Dashboard";
 
                 return View(model);
             }

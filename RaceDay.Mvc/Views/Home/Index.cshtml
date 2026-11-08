@@ -1,4 +1,4 @@
-@model List<RaceDay.Mvc.Models.EventViewModel>
+﻿@model List<RaceDay.Mvc.Models.EventViewModel>
 
 @{
     ViewData["Title"] = "RaceDay";
@@ -405,8 +405,13 @@ else
                                  <div class="form-text">Show events with at least one category matching your age on event day.</div>
                              </div>
                          </div>
-                         <div class="col-12">
-    <button id="clearEventFilters" type="button" class="btn btn-outline-secondary" style="min-width: 100px; white-space: nowrap;">Clear</button>
+                        <div class="col-12">
+                            <button id="clearEventFilters"
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    style="min-width: 100px; white-space: nowrap; width: auto;">
+                                Clear
+                            </button>
                         </div>
                     </div>
                 </div>

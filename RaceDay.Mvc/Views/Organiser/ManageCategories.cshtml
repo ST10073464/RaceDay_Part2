@@ -2,6 +2,14 @@
 
 @{
     ViewData["Title"] = "Manage Categories";
+
+    var returnTo = Context.Request.Query["returnTo"].ToString();
+
+    var fromParticipants = string.Equals(
+        returnTo,
+        "EventParticipants",
+        StringComparison.OrdinalIgnoreCase
+    );
 }
 
 <div class="container mt-4">
@@ -19,30 +27,27 @@
             </p>
         </div>
 
-        <a asp-controller="Organiser"
-           asp-action="EditEvent"
-           asp-route-id="@Model.EventId"
-           class="btn btn-outline-secondary">
-            Back to Event
-        </a>
+        @if (fromParticipants)
+        {
+            <a asp-controller="Organiser"
+               asp-action="EventParticipants"
+               asp-route-eventId="@Model.EventId"
+               asp-route-returnTo="EditEvent"
+               class="btn btn-outline-secondary">
+                Back to Event Participants
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Organiser"
+               asp-action="EditEvent"
+               asp-route-id="@Model.EventId"
+               class="btn btn-outline-secondary">
+                Back to Edit Event
+            </a>
+        }
 
     </div>
-
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success
-            alert-dismissible fade show">
-
-            @TempData["SuccessMessage"]
-
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert">
-            </button>
-
-        </div>
-    }
 
 
     @if (TempData["ErrorMessage"] != null)
@@ -168,6 +173,10 @@
                                                            name="eventId"
                                                            value="@Model.EventId" />
 
+                                                    <input type="hidden"
+                                                           name="returnTo"
+                                                           value="@returnTo" />
+
                                                     <button type="submit"
                                                             class="btn btn-sm btn-outline-danger"
                                                             onclick="return confirm('Are you sure you want to delete this category?');">
@@ -223,6 +232,10 @@
 
                         <input asp-for="EventId"
                                type="hidden" />
+
+                        <input type="hidden"
+                               name="returnTo"
+                               value="@returnTo" />
 
                         <div asp-validation-summary="ModelOnly"
                              class="text-danger mb-3">
