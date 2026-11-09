@@ -522,21 +522,26 @@ https://youtu.be/DIlPPcNDX2s
 
 ---
 
+
 ## Part 3 Video Demonstration
 
-The final Part 3 demonstration will cover:
+The final RaceDay Portfolio of Evidence presentation
+demonstrates:
 
-- ASP.NET Core MVC structure
-- Participant functionality
-- Organiser functionality
-- RaceDay.API integration
-- Azure Blob Storage
-- Docker setup and execution
-- Automated testing
+- ASP.NET Core MVC and REST API integration
+- SQL Server database and Entity Framework Core
+- Participant and Organiser functionality
+- Public event browsing and registration
+- Login redirection to the selected event
+- Azure Blob Storage integration
+- Docker containerization
+- Automated unit testing
+- GitHub Actions CI/CD
 
-YouTube link:
+### Final Presentation Video
 
-`To be added after the final Part 3 demonstration is recorded.`
+https://youtu.be/f2S7y51RfyA
+
 
 ---
 
