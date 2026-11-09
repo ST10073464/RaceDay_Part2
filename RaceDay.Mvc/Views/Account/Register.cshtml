@@ -12,9 +12,25 @@
                     <h2 class="text-center mb-2">Create RaceDay Account</h2>
                     <p class="text-center text-muted mb-4">Register as a participant to access RaceDay events.</p>
 
-                    <form asp-controller="Account" asp-action="Register" method="post" id="registrationForm" autocomplete="off">
+                    <form asp-controller="Account"
+                          asp-action="Register"
+                          method="post"
+                          id="registrationForm"
+                          autocomplete="off">
+
                         @Html.AntiForgeryToken()
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        @* Preserve the selected event during registration *@
+                        @if (ViewBag.EventId != null)
+                        {
+                            <input type="hidden"
+                                   name="eventId"
+                                   value="@ViewBag.EventId" />
+                        }
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3"></div>
+
 
                         <!-- STEP 1: AGE CONFIRMATION -->
                         <fieldset class="mb-4">
@@ -103,10 +119,17 @@
                     </div>
 
                     <hr class="my-4" />
+
                     <p class="text-center mb-0">
                         Already have an account?
-                        <a asp-controller="Account" asp-action="Login">Log in</a>
+
+                        <a asp-controller="Account"
+                           asp-action="Login"
+                           asp-route-eventId="@ViewBag.EventId">
+                            Log in
+                        </a>
                     </p>
+
                 </div>
             </div>
         </div>

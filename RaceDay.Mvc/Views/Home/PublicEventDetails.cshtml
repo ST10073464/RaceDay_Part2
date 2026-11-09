@@ -235,20 +235,23 @@
             <div class="d-flex flex-wrap gap-2">
 
                 <!-- REMEMBER SELECTED EVENT DURING LOGIN -->
+
                 <a asp-controller="Account"
                    asp-action="Login"
-                   asp-route-eventId="@raceEvent.EventId"
-                   class="public-enrol-button">
+                   asp-route-eventId="@Model.Event.EventId"
+                   class="btn btn-primary">
                     Log In to Enrol
                 </a>
+
 
                 <!-- REMEMBER SELECTED EVENT DURING REGISTRATION -->
                 <a asp-controller="Account"
                    asp-action="Register"
-                   asp-route-eventId="@raceEvent.EventId"
+                   asp-route-eventId="@Model.Event.EventId"
                    class="btn btn-outline-success">
-                    Create Account
+                    Create an Account to Enrol
                 </a>
+
 
             </div>
         }
