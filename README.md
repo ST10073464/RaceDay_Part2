@@ -328,10 +328,10 @@ The final POE setup was verified locally with Docker Desktop. The containers use
 
 | Component | Image | Container | Host URL |
 | --- | --- | --- | --- |
-| API | `raceday-api:poe-latest` | `raceday-api-final` | `http://localhost:8083` |
-| MVC | `raceday-mvc:poe-latest` | `raceday-mvc-final` | `http://localhost:8082` |
+| API | `raceday-api:poe-latest` | `raceday-api-final` | `http://localhost:8091` |
+| MVC | `raceday-mvc:poe-latest` | `raceday-mvc-final` | `http://localhost:8092` |
 
-Both containers listen on port `8080` internally. The host publishes MVC on `8082` and API on `8083`.
+Both containers listen on port `8080` internally. The host publishes MVC on `8092` and API on `8091`.
 
 The MVC container's verified configuration is:
 
@@ -365,7 +365,7 @@ docker logs --tail 20 raceday-api-final
 docker logs --tail 20 raceday-mvc-final
 ```
 
-Open the containerized MVC application at:
+Open the containerised MVC application at:
 
 ```text
 http://localhost:8082
@@ -378,8 +378,8 @@ These commands inspect the existing local setup; they do not build, replace, or 
 From the **solution root**, Docker images can be built using the committed Dockerfiles:
 
 ```powershell
-docker build -f RaceDay.API/Dockerfile -t raceday-api:poe-latest .
-docker build -f RaceDay.Mvc/Dockerfile -t raceday-mvc:poe-latest .
+docker build -f RaceDay.API/Dockerfile -t raceday-api:poe-latest.
+docker build -f RaceDay.Mvc/Dockerfile -t raceday-mvc:poe-latest.
 ```
 
 Building an image does not automatically start a container. To reproduce the deployment on another computer, configure the API's SQL Server connection, Azure Blob Storage credentials, network, and the MVC API base URL for that environment. The existing `raceday-api-new` alias is specific to the verified local setup; it is not guaranteed to exist on another computer. Do not commit credentials or private connection strings.
@@ -416,7 +416,7 @@ SQL Server         Azure Blob Storage
 
 Automated tests are implemented using xUnit and EF Core InMemory.
 
-The automated tests cover important API functionality including successful and failure scenarios.
+The automated tests cover important API functionality, including success and failure scenarios.
 
 Before committing changes, the solution can be tested with:
 
@@ -522,7 +522,6 @@ https://youtu.be/DIlPPcNDX2s
 
 ---
 
-
 ## Part 3 Video Demonstration
 
 The final RaceDay Portfolio of Evidence presentation
@@ -541,7 +540,6 @@ demonstrates:
 ### Final Presentation Video
 
 https://youtu.be/f2S7y51RfyA
-
 
 ---
 
